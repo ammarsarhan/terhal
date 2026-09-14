@@ -94,7 +94,7 @@ services:
       DEBUG: "0"
     volumes:
       - localstack_data:/var/lib/localstack
-      - ./docker/localstack/init.sh:/etc/localstack/init/ready.d/init.sh
+      - ./localstack/init.sh:/etc/localstack/init/ready.d/init.sh
     healthcheck:
       test:
         - CMD
