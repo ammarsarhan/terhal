@@ -3,12 +3,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: terhal-frontend
+    container_name: frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
+      # Frontend
       NODE_ENV: development
+
+      # Backend
       NEXT_PUBLIC_API_URL: http://localhost:8080
     volumes:
       - ./frontend:/app
@@ -24,20 +27,24 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: terhal-backend
+    container_name: backend
     restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
+      # Backend
       NODE_ENV: development
       PORT: 8080
-
+      
+      # Database
       DATABASE_URL: postgresql://admin:admin@postgres:5432/terhal
 
+      # Localstack (Main)
       AWS_REGION: us-east-1
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
 
+      # Localstack (S3 Bucket)
       S3_ENDPOINT: http://localstack:4566
       S3_BUCKET: terhal
 
@@ -54,7 +61,7 @@ services:
 
   postgres:
     image: postgres:17-alpine
-    container_name: terhal-postgres
+    container_name: postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: admin
@@ -77,7 +84,7 @@ services:
 
   localstack:
     image: localstack/localstack:latest
-    container_name: terhal-localstack
+    container_name: localstack
     restart: unless-stopped
     ports:
       - "4566:4566"
