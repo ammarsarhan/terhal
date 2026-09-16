@@ -291,6 +291,7 @@ model Vehicle {
   make  String
   model String
   year  Int?
+  imageKeys String[]
 
   plateNumber String @unique
   color       String
