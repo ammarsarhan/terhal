@@ -12,8 +12,257 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  CUSTOMER
+  STAFF
+}
+
+enum UserStatus {
+  UNVERIFIED
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum TripStatus {
+  PENDING
+  CANCELLED
+  CONFIRMED
+  IN_PROGRESS
+  AWAITING_REPORT
+  COMPLETED
+}
+
+enum TripClass {
+  ECONOMY
+  VIP
+}
+
+enum CarBody {
+  SEDAN
+  SUV
+  MINIVAN
+  VAN
+}
+
+enum ExpenseType {
+  TOLL
+  FUEL
+  MAINTENANCE
+  OTHER
+}
+
+model Trip {
+  id     String     @id @default(cuid())
+  code   String     @unique
+  status TripStatus @default(PENDING)
+
+  // Both of these will be implemented with XOR logic in the application authService such that one or the other will always be available. 
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
+
+  guestSession   GuestSession? @relation(fields: [guestSessionId], references: [id])
+  guestSessionId String?
+
+  // Created as optional initially until they are assigned by staff.
+  driver    Driver?  @relation(fields: [driverId], references: [id])
+  driverId  String?
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
+  vehicleId String?
+
+  // Report optional until created and linked by the driver.
+  report TripReport?
+
+  // Keep a log of all of the events that occur per the trip.
+  events TripEvent[]
+
+  clientName  String
+  clientPhone String
+  class       TripClass
+  luggage     Int
+  passengers  Int
+  car         CarBody
+
+  additionalNotes String?
+
+  pickupId        String
+  pickupSnapshot  String
+  pickupLatitude  Decimal
+  pickupLongitude Decimal
+
+  dropoffId        String
+  dropoffSnapshot  String
+  dropoffLatitude  Decimal
+  dropoffLongitude Decimal
+}
+
+model TripEvent {
+  id String @id @default(cuid())
+
+  staff   Staff  @relation(fields: [staffId], references: [id])
+  staffId String
+
+  trip   Trip   @relation(fields: [tripId], references: [id])
+  tripId String
+
+  action String
+
+  createdAt DateTime @default(now())
+}
+
+model TripReport {
+  id     String @id @default(cuid())
+  tripId String @unique
+  trip   Trip   @relation(references: [id], fields: [tripId])
+
+  startedAt     DateTime
+  vehiclePickup String
+
+  pickupAt  DateTime
+  dropoffAt DateTime
+
+  vehicleDropoff String
+  endedAt        DateTime
+
+  stops    TripStop[]
+  expenses TripExpense[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TripStop {
+  id String @id @default(cuid())
+
+  report   TripReport @relation(fields: [reportId], references: [id])
+  reportId String
+
+  locationId String?
+  address    String
+  latitude   Decimal
+  longitude  Decimal
+  duration   Int
+
+  notes String?
+}
+
+model TripExpense {
+  id String @id @default(cuid())
+
+  report   TripReport @relation(fields: [reportId], references: [id])
+  reportId String
+
+  amount Decimal
+  type   ExpenseType
+  notes  String?
+}
+
+model GuestSession {
+  id String @id @default(cuid())
+
+  firstName String
+  lastName  String
+  phone     String
+  email     String
+
+  tokenHash String @unique
+
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  trips Trip[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserSession {
+  id           String @id @default(cuid())
+  refreshToken String @unique
+  userId       String
+  user         User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  ipAddress String?
+  userAgent String?
+}
+
 model User {
-  id        String   @id @default(cuid())
+  id String @id @default(cuid())
+
+  firstName String
+  lastName  String
+  role      UserRole   @default(CUSTOMER)
+  status    UserStatus @default(UNVERIFIED)
+
+  sessions UserSession[]
+  phone    String        @unique
+  email    String        @unique
+
+  passwordHash String
+
+  staff    Staff?
+  customer Customer?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Staff {
+  id String @id @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique
+
+  permissions Json
+  events      TripEvent[]
+}
+
+model Customer {
+  id String @id @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique
+
+  trips Trip[]
+}
+
+model Driver {
+  id String @id @default(cuid())
+
+  firstName String
+  lastName  String
+  phone     String @unique
+
+  isExternal Boolean @default(false)
+  company    String?
+
+  trips Trip[]
+
+  additionalNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Vehicle {
+  id String @id @default(cuid())
+
+  make  String
+  model String
+  year  Int?
+
+  plateNumber String @unique
+  color       String
+
+  isExternal Boolean @default(false)
+  office     String?
+
+  trips Trip[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
