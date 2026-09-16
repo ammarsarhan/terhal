@@ -63,6 +63,11 @@ enum DocumentType {
   IMAGE
 }
 
+enum VerificationMethod {
+  WHATSAPP
+  EMAIL
+}
+
 model Trip {
   id     String     @id @default(cuid())
   code   String     @unique
@@ -91,15 +96,15 @@ model Trip {
   // Keep a log of all of the events that occur per the trip.
   events TripEvent[]
 
-  clientName  String
-  clientPhone String
-  class       TripClass
+  clientName    String
+  clientPhone   String
+  class         TripClass
   smallLuggage  Int
   mediumLuggage Int
   largeLuggage  Int
-  passengers Int
-  car        CarBody
-  totalPrice Decimal
+  passengers    Int
+  car           CarBody
+  totalPrice    Decimal
 
   notes String?
 
@@ -195,6 +200,12 @@ model GuestSession {
 
   tokenHash String @unique
 
+  // Phone-only OTP, guests have no email verification path.
+  verificationHash      String?
+  verificationExpiresAt DateTime?
+  verificationAttempts  Int       @default(0)
+  verifiedAt            DateTime?
+
   expiresAt DateTime
   revokedAt DateTime?
 
@@ -231,6 +242,15 @@ model User {
   email    String        @unique
 
   passwordHash String
+
+  // Method tells you which channel it was sent to.
+  verificationHash      String?
+  verificationExpiresAt DateTime?
+  verificationAttempts  Int                 @default(0)
+  verificationMethod    VerificationMethod?
+
+  verifiedVia VerificationMethod?
+  verifiedAt  DateTime?
 
   staff    Staff?
   customer Customer?
