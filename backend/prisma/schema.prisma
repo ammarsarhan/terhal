@@ -46,9 +46,10 @@ enum CarBody {
 }
 
 enum ExpenseType {
-  TOLL
+  INTERCITY_TOLL
   FUEL
-  MAINTENANCE
+  CAR_MAINTENANCE
+  DRIVER_FEE
   OTHER
 }
 
@@ -82,8 +83,9 @@ model Trip {
   luggage     Int
   passengers  Int
   car         CarBody
+  totalPrice  Decimal
 
-  additionalNotes String?
+  notes String?
 
   pickupId        String
   pickupSnapshot  String
@@ -94,6 +96,12 @@ model Trip {
   dropoffSnapshot  String
   dropoffLatitude  Decimal
   dropoffLongitude Decimal
+
+  // Link a trip to another trip such that we can keep track of round-about trips.
+  previousTrip   Trip?   @relation("TripChain", fields: [previousTripId], references: [id])
+  previousTripId String? @unique
+  
+  subsequentTrip       Trip?   @relation("TripChain")
 }
 
 model TripEvent {
@@ -117,12 +125,14 @@ model TripReport {
 
   startedAt     DateTime
   vehiclePickup String
+  startMileage  Int
 
   pickupAt  DateTime
   dropoffAt DateTime
 
   vehicleDropoff String
   endedAt        DateTime
+  endMileage     Int
 
   stops    TripStop[]
   expenses TripExpense[]
@@ -141,7 +151,9 @@ model TripStop {
   address    String
   latitude   Decimal
   longitude  Decimal
-  duration   Int
+
+  startedAt DateTime
+  endedAt   DateTime
 
   notes String?
 }
@@ -237,12 +249,13 @@ model Driver {
   lastName  String
   phone     String @unique
 
+  amountOwed Decimal
   isExternal Boolean @default(false)
   company    String?
 
   trips Trip[]
 
-  additionalNotes String?
+  notes String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
