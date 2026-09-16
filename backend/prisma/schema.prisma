@@ -80,10 +80,14 @@ model Trip {
   clientName  String
   clientPhone String
   class       TripClass
-  luggage     Int
-  passengers  Int
-  car         CarBody
-  totalPrice  Decimal
+
+  smallLuggage  Int
+  mediumLuggage Int
+  largeLuggage  Int
+
+  passengers Int
+  car        CarBody
+  totalPrice Decimal
 
   notes String?
 
