@@ -24,6 +24,11 @@ enum UserStatus {
   DELETED
 }
 
+enum TripSource {
+  USER
+  STAFF
+}
+
 enum TripStatus {
   PENDING
   CANCELLED
@@ -61,14 +66,18 @@ enum DocumentType {
 model Trip {
   id     String     @id @default(cuid())
   code   String     @unique
+  source TripSource
   status TripStatus @default(PENDING)
 
-  // Both of these will be implemented with XOR logic in the application authService such that one or the other will always be available. 
+  // One of these relationships must always be available. Added the Staff model relationship in case they need to add a Trip.
   customer   Customer? @relation(fields: [customerId], references: [id])
   customerId String?
 
   guestSession   GuestSession? @relation(fields: [guestSessionId], references: [id])
   guestSessionId String?
+
+  staff   Staff?  @relation(fields: [staffId], references: [id])
+  staffId String?
 
   // Created as optional initially until they are assigned by staff.
   driver    Driver?  @relation(fields: [driverId], references: [id])
@@ -85,11 +94,9 @@ model Trip {
   clientName  String
   clientPhone String
   class       TripClass
-
   smallLuggage  Int
   mediumLuggage Int
   largeLuggage  Int
-
   passengers Int
   car        CarBody
   totalPrice Decimal
@@ -257,8 +264,9 @@ model Staff {
   userId String @unique
 
   permissions Json
-  events      TripEvent[]
 
+  trips       Trip[]
+  events      TripEvent[]
   invitations Invitation[]
 }
 
