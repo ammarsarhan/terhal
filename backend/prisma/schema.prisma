@@ -257,6 +257,8 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  notifications Notification[]
 }
 
 model Invitation {
@@ -359,4 +361,58 @@ model AnalyticsDocument {
   year   Int
 
   createdAt DateTime @default(now())
+}
+
+enum NotificationChannel {
+  WHATSAPP
+  IN_APP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+model Notification {
+  id String @id @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  title String
+  body  String
+
+  // Keep this optionally for arbitrary data in the future, a deep link or a trip id for example.
+  data Json?
+
+  deliveries NotificationDelivery[]
+
+  createdAt DateTime @default(now())
+}
+
+model NotificationDelivery {
+  id String @id @default(cuid())
+
+  notification   Notification @relation(fields: [notificationId], references: [id])
+  notificationId String
+
+  channel NotificationChannel
+  status  NotificationStatus  @default(PENDING)
+
+  // WhatsApp-specific, null for IN_APP.
+  recipientPhone String?
+  providerId     String? // For matching delivery webhooks back to this row.
+
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  readAt      DateTime?
+
+  failedAt      DateTime?
+  failureReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
