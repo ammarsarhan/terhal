@@ -100,8 +100,8 @@ model Trip {
   // Link a trip to another trip such that we can keep track of round-about trips.
   previousTrip   Trip?   @relation("TripChain", fields: [previousTripId], references: [id])
   previousTripId String? @unique
-  
-  subsequentTrip       Trip?   @relation("TripChain")
+
+  subsequentTrip Trip? @relation("TripChain")
 }
 
 model TripEvent {
@@ -223,6 +223,24 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+model Invitation {
+  id String @id @default(cuid())
+
+  email     String
+  tokenHash String @unique
+
+  invitor   Staff  @relation(fields: [invitorId], references: [id])
+  invitorId String @unique
+
+  permissions Json?
+
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  revokedAt  DateTime?
+
+  createdAt DateTime @default(now())
+}
+
 model Staff {
   id String @id @default(cuid())
 
@@ -231,6 +249,8 @@ model Staff {
 
   permissions Json
   events      TripEvent[]
+
+  invitations Invitation[]
 }
 
 model Customer {
