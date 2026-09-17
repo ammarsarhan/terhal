@@ -9,6 +9,7 @@ import { ZodError } from 'zod'
 import AppError from '@/src/shared/utils/error.js'
 
 import health from '@/src/domains/health/health.routes.js'
+import auth from '@/src/domains/auth/auth.routes.js'
 
 const server = new Hono()
   .use('*', logger())
@@ -66,6 +67,7 @@ const server = new Hono()
     }, 500);
   })
   .route('/health', health)
+  .route('/auth', auth)
 
 // Serve the application and expose from Docker locally.
 serve({
