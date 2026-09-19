@@ -12,6 +12,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum AdminStatus {
+  ACTIVE
+  INACTIVE
+}
+
 enum UserRole {
   CUSTOMER
   STAFF
@@ -58,14 +63,63 @@ enum ExpenseType {
   OTHER
 }
 
-enum DocumentType {
-  REPORT
-  IMAGE
-}
-
 enum VerificationMethod {
   WHATSAPP
   EMAIL
+}
+
+model Admin {
+  id String @id @default(cuid())
+
+  firstName String
+  lastName  String
+  email     String      @unique
+  status    AdminStatus @default(ACTIVE)
+
+  passwordHash String
+
+  totpSecret     String?
+  totpEnabledAt  DateTime?
+  lastLoginAt    DateTime?
+
+  sessions    AdminSession[]
+  auditLogs   AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminSession {
+  id           String @id @default(cuid())
+  refreshToken String @unique
+  adminId      String
+  admin        Admin  @relation(fields: [adminId], references: [id])
+
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  ipAddress String?
+  userAgent String?
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  admin   Admin  @relation(fields: [adminId], references: [id])
+  adminId String
+
+  action     String
+  entityType String
+  entityId   String
+  before     Json?
+  after      Json?
+
+  ipAddress String?
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
 }
 
 model Trip {
@@ -98,6 +152,7 @@ model Trip {
 
   clientName    String
   clientPhone   String
+  pickupDate    DateTime
   class         TripClass
   smallLuggage  Int
   mediumLuggage Int
@@ -209,7 +264,8 @@ model GuestSession {
   expiresAt DateTime
   revokedAt DateTime?
 
-  trips Trip[]
+  trips         Trip[]
+  notifications Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -268,7 +324,7 @@ model Invitation {
   tokenHash String @unique
 
   invitor   Staff  @relation(fields: [invitorId], references: [id])
-  invitorId String @unique
+  invitorId String
 
   permissions Json?
 
@@ -366,6 +422,7 @@ model AnalyticsDocument {
 enum NotificationChannel {
   WHATSAPP
   IN_APP
+  EMAIL
 }
 
 enum NotificationStatus {
@@ -379,8 +436,10 @@ enum NotificationStatus {
 model Notification {
   id String @id @default(cuid())
 
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
+  user           User?         @relation(fields: [userId], references: [id])
+  userId         String?
+  guestSession   GuestSession? @relation(fields: [guestSessionId], references: [id])
+  guestSessionId String?
 
   title String
   body  String
@@ -403,8 +462,8 @@ model NotificationDelivery {
   status  NotificationStatus  @default(PENDING)
 
   // WhatsApp-specific, null for IN_APP.
-  recipientPhone String?
-  providerId     String? // For matching delivery webhooks back to this row.
+  recipient  String?
+  providerId String? // For matching delivery webhooks back to this row.
 
   sentAt      DateTime?
   deliveredAt DateTime?
