@@ -1,0 +1,58 @@
+enum AdminStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Admin {
+  id String @id @default(cuid())
+
+  firstName String
+  lastName  String
+  email     String      @unique
+  status    AdminStatus @default(ACTIVE)
+
+  passwordHash String
+
+  totpSecret     String?
+  totpEnabledAt  DateTime?
+  lastLoginAt    DateTime?
+
+  sessions    AdminSession[]
+  auditLogs   AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminSession {
+  id           String @id @default(cuid())
+  refreshToken String @unique
+  adminId      String
+  admin        Admin  @relation(fields: [adminId], references: [id])
+
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  ipAddress String?
+  userAgent String?
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  admin   Admin  @relation(fields: [adminId], references: [id])
+  adminId String
+
+  action     String
+  entityType String
+  entityId   String
+  before     Json?
+  after      Json?
+
+  ipAddress String?
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+}

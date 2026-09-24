@@ -1,0 +1,128 @@
+enum UserRole {
+  CUSTOMER
+  STAFF
+}
+
+enum UserStatus {
+  UNVERIFIED
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum VerificationMethod {
+  WHATSAPP
+  EMAIL
+}
+
+model User {
+  id String @id @default(cuid())
+
+  firstName String
+  lastName  String
+  role      UserRole   @default(CUSTOMER)
+  status    UserStatus @default(UNVERIFIED)
+
+  sessions UserSession[]
+  phone    String        @unique
+  email    String        @unique
+
+  passwordHash String
+
+  // Method tells you which channel it was sent to.
+  verificationHash      String?
+  verificationExpiresAt DateTime?
+  verificationAttempts  Int                 @default(0)
+  verificationMethod    VerificationMethod?
+
+  verifiedVia VerificationMethod?
+  verifiedAt  DateTime?
+
+  staff    Staff?
+  customer Customer?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  notifications Notification[]
+}
+
+model UserSession {
+  id           String @id @default(cuid())
+  refreshToken String @unique
+  userId       String
+  user         User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  ipAddress String?
+  userAgent String?
+}
+
+model Staff {
+  id String @id @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique
+
+  permissions Json
+
+  trips       Trip[]
+  events      TripEvent[]
+  invitations Invitation[]
+}
+
+model Customer {
+  id String @id @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique
+
+  trips Trip[]
+}
+
+model Invitation {
+  id String @id @default(cuid())
+
+  email     String
+  tokenHash String @unique
+
+  invitor   Staff  @relation(fields: [invitorId], references: [id])
+  invitorId String
+
+  permissions Json?
+
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  revokedAt  DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+model GuestSession {
+  id String @id @default(cuid())
+
+  firstName String
+  lastName  String
+  phone     String
+  email     String
+
+  tokenHash String @unique
+
+  // Phone-only OTP, guests have no email verification path.
+  verificationHash      String?
+  verificationExpiresAt DateTime?
+  verificationAttempts  Int       @default(0)
+  verifiedAt            DateTime?
+
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  trips         Trip[]
+  notifications Notification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -12,4 +12,4 @@ RUN npx prisma generate
 
 EXPOSE 8080
 
-CMD npx prisma db push && npm run dev
+CMD npx prisma migrate deploy && npm run dev
