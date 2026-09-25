@@ -1,7 +1,7 @@
 import { createFactory } from "hono/factory";
-import AuthService from "@/src/domains/auth/auth.service.js";
-import { signUpSchema } from "@/src/domains/auth/auth.validators.js";
-import validate from "@/src/shared/middleware/validate.js";
+import AuthService from "./auth.service.js";
+import { signUpSchema } from "./auth.validators.js";
+import validate from "../../shared/middleware/validate.js";
 
 const factory = createFactory();
 

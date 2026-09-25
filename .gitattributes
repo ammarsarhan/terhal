@@ -1,0 +1,7 @@
+# Normalize line endings for all text files in the repo.
+* text=auto
+
+# Shell scripts run inside Linux containers (e.g. localstack/init.sh), so
+# they must always be checked out with LF endings, even on Windows.
+# CRLF endings make bash fail with errors like "$'\r': command not found".
+*.sh text eol=lf

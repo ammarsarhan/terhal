@@ -9,10 +9,9 @@
     "forceConsistentCasingInFileNames": true,
     "rootDir": ".",
     "outDir": "./dist",
-    "paths": {
-      "@/*": ["./*"]
-    },
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
   "include": [
     "**/*.ts"

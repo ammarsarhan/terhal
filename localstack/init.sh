@@ -2,8 +2,8 @@
 
 set -e
 
-BUCKET="${S3_BUCKET:-terhal}"
-REGION="${AWS_DEFAULT_REGION:-us-east-1}"
+BUCKET="terhal"
+REGION="us-east-1"
 
 echo "Initializing LocalStack..."
 

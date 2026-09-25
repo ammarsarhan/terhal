@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 
-import { prisma } from "@/src/shared/utils/prisma.js";
-import { ServiceUnavailableError } from "@/src/shared/utils/error.js";
+import { prisma } from "../../shared/utils/prisma.js";
+import { ServiceUnavailableError } from "../../shared/utils/error.js";
 
 const health = new Hono()
     .get("/", async (c) => {
