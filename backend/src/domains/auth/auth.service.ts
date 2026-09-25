@@ -1,4 +1,4 @@
-import { SignUpSchemaPayload } from "@/src/domains/auth/auth.validators.js";
+import { SignUpSchemaPayload } from "./auth.validators.js";
 
 export default class AuthService {
     createUser = async (payload: SignUpSchemaPayload) => {
