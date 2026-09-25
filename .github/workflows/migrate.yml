@@ -1,18 +1,22 @@
 name: Deploy DB Migrations
 
-# Applies pending Prisma migrations to the production database. Runs only
-# on push to `main` (i.e. only after a PR has passed CI and been merged),
-# and is deliberately kept separate from the Vercel build/deploy itself so
-# a migration only ever runs once, on purpose, instead of on every preview
-# build. Requires the DIRECT_DATABASE_URL secret to be set in this repo's
-# GitHub Actions settings before it will succeed.
+# Applies pending Prisma migrations to the production database.
+# Runs automatically on push to `main` when migrations change, and can also
+# be run by hand from the Actions tab ("Run workflow").
+# Requires the DIRECT_DATABASE_URL secret (Neon direct, non-pooled string).
 
 on:
   push:
     branches: [main]
     paths:
       - "backend/prisma/migrations/**"
-      - "backend/prisma/schema.prisma"
+      - "backend/prisma/schema/**"
+  workflow_dispatch:
+
+# Never run two migrations against production at the same time.
+concurrency:
+  group: migrate-production
+  cancel-in-progress: false
 
 jobs:
   migrate:
