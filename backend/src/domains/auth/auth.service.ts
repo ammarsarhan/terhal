@@ -7,6 +7,7 @@ import { UserStatus } from "../../../generated/prisma/enums.js";
 
 export default class AuthService {
     private readonly MAXIMUM_SESSION_LIMIT = 5;
+    private readonly MAXIMUM_SESSION_LIFETIME = 30 * 24 * 60 * 60 * 1000; // 30 days, no matter how often the session is refreshed.
     private readonly INACTIVE_STATUS: UserStatus[] = [UserStatus.SUSPENDED, UserStatus.DELETED];
 
     createUser = async (payload: SignUpSchemaPayload) => {
@@ -87,6 +88,54 @@ export default class AuthService {
             user: createUserResponse(user),
             accessToken,
             refreshToken,
+            expiresAt
+        };
+    }
+
+    refresh = async (refreshToken: string | undefined, ipAddress: string | null, userAgent: string | null) => {
+        if (!refreshToken) throw new UnauthorizedError("Your session is invalid or has expired. Please sign in again.", ERROR_CODES.INVALID_REFRESH_TOKEN);
+
+        // Sessions only store the hash of the refresh token, so look it up the same way.
+        const currentHash = TokenService.hashRefreshToken(refreshToken);
+        const session = await prisma.userSession.findUnique({ where: { refreshToken: currentHash }, include: { user: true } });
+
+        if (!session) throw new UnauthorizedError("Your session is invalid or has expired. Please sign in again.", ERROR_CODES.INVALID_REFRESH_TOKEN);
+
+        // Refreshing slides the expiry forward, so also enforce an absolute lifetime counted from when the user signed in.
+        const absoluteExpiresAt = new Date(session.createdAt.getTime() + this.MAXIMUM_SESSION_LIFETIME);
+        const now = new Date();
+
+        if (session.revokedAt || session.expiresAt <= now || absoluteExpiresAt <= now) {
+            throw new UnauthorizedError("Your session is invalid or has expired. Please sign in again.", ERROR_CODES.INVALID_REFRESH_TOKEN);
+        }
+
+        // Check the user again, since their status may have changed since they signed in.
+        const { user } = session;
+
+        if (this.INACTIVE_STATUS.includes(user.status)) {
+            await prisma.userSession.update({ where: { id: session.id }, data: { revokedAt: new Date() } });
+            throw new ForbiddenError("User account is not active. You are not allowed to sign in.", ERROR_CODES.ACCOUNT_NOT_ACTIVE);
+        }
+
+        // Issue new tokens with the user's current role, so role changes apply from the next refresh.
+        const { accessToken, refreshToken: newRefreshToken, refreshTokenHash, expiresAt: slidingExpiresAt } = await TokenService.generateTokenPair("user", user.id, { role: user.role });
+
+        // Never extend the session past its absolute lifetime.
+        const expiresAt = slidingExpiresAt < absoluteExpiresAt ? slidingExpiresAt : absoluteExpiresAt;
+
+        // Rotate the refresh token in place, so a session still represents a single device.
+        // Matching on the old hash makes sure two requests can't both use the same refresh token.
+        const { count } = await prisma.userSession.updateMany({
+            where: { id: session.id, refreshToken: currentHash, revokedAt: null },
+            data: { refreshToken: refreshTokenHash, expiresAt, ipAddress, userAgent }
+        });
+
+        if (count === 0) throw new UnauthorizedError("Your session is invalid or has expired. Please sign in again.", ERROR_CODES.INVALID_REFRESH_TOKEN);
+
+        return {
+            user: createUserResponse(user),
+            accessToken,
+            refreshToken: newRefreshToken,
             expiresAt
         };
     }

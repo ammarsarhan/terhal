@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { Context } from "hono";
-import { getCookie, setCookie } from "hono/cookie";
+import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { decode, sign, verify } from "hono/jwt";
 import type { UserRole } from "../../../generated/prisma/enums.js";
 
@@ -76,6 +76,11 @@ export default class TokenService {
         return getCookie(c, config[audience].accessCookie);
     }
 
+    // Reads the refresh token from the audience's cookie, undefined when it isn't there.
+    static getRefreshToken = (c: Context, audience: Audience) => {
+        return getCookie(c, config[audience].refreshCookie);
+    }
+
     // Refresh tokens are opaque random strings, the session row in the database is what makes them valid.
     static generateRefreshToken = () => {
         return randomBytes(32).toString("base64url");
@@ -115,5 +120,13 @@ export default class TokenService {
             path: local.refreshPath,
             expires: expiresAt,
         });
+    }
+
+    // Deleting a cookie only works with the same path and options it was set with.
+    static clearAuthenticationCookies = (c: Context, audience: Audience) => {
+        const local = config[audience];
+
+        deleteCookie(c, local.accessCookie, { ...this.baseCookieOptions, path: local.basePath });
+        deleteCookie(c, local.refreshCookie, { ...this.baseCookieOptions, path: local.refreshPath });
     }
 }
