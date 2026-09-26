@@ -149,4 +149,14 @@ export default class AuthService {
             data: { revokedAt: new Date() }
         });
     }
+
+    // Loads the signed in user's profile, and checks their status since the access token can't reflect changes made after it was issued.
+    getSession = async (userId: string) => {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+
+        if (!user) throw new UnauthorizedError("You must be signed in to access this resource.", ERROR_CODES.UNAUTHENTICATED);
+        if (this.INACTIVE_STATUS.includes(user.status)) throw new ForbiddenError("User account is not active. You are not allowed to sign in.", ERROR_CODES.ACCOUNT_NOT_ACTIVE);
+
+        return createUserResponse(user);
+    }
 }

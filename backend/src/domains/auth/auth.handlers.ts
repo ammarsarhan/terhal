@@ -4,6 +4,8 @@ import { signInSchema, signUpSchema } from "./auth.validators.js";
 import validate from "../../shared/middleware/validate.js";
 import TokenService from "../token/token.service.js";
 import { ForbiddenError, UnauthorizedError } from "../../shared/utils/error.js";
+import { authorize } from "./auth.middleware.js";
+import { UserRole } from "../../../generated/prisma/enums.js";
 
 const factory = createFactory();
 
@@ -84,5 +86,13 @@ export const signOutHandler = factory.createHandlers(
 
         TokenService.clearAuthenticationCookies(c, "user");
         return c.json({ success: true }, 200);
+    }
+)
+
+export const sessionHandler = factory.createHandlers(
+    authorize([UserRole.CUSTOMER, UserRole.STAFF]),
+    async (c) => {
+        const user = await authService.getSession(c.var.id);
+        return c.json({ success: true, data: { user } }, 200);
     }
 )
