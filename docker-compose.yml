@@ -35,6 +35,8 @@ services:
       # Backend
       NODE_ENV: ${NODE_ENV}
       PORT: ${BACKEND_PORT}
+      APP_SECRET: ${APP_SECRET}
+      ADMIN_SECRET: ${ADMIN_SECRET}
 
       # Frontend
       FRONTEND_URL: ${FRONTEND_URL}

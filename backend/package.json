@@ -16,6 +16,7 @@
     "@hono/zod-validator": "^0.9.1",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "argon2": "^0.45.1",
     "dotenv": "^17.4.2",
     "hono": "^4.13.7",
     "pg": "^8.23.0",
