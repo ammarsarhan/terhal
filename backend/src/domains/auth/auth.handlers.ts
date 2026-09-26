@@ -1,6 +1,6 @@
 import { createFactory } from "hono/factory";
 import AuthService from "./auth.service.js";
-import { signUpSchema } from "./auth.validators.js";
+import { signInSchema, signUpSchema } from "./auth.validators.js";
 import validate from "../../shared/middleware/validate.js";
 import TokenService from "../token/token.service.js";
 
@@ -28,5 +28,23 @@ export const signUpHandler = factory.createHandlers(
         // Tokens are only sent as http-only cookies so they can't be read by scripts on the page.
         TokenService.setAuthenticationCookies(c, "user", tokens);
         return c.json({ success: true, data: { user } }, 201);
+    }
+)
+
+export const signInHandler = factory.createHandlers(
+    validate("json", signInSchema),
+    async (c) => {
+        const payload = c.req.valid("json");
+
+        const ipAddress = c.req.header("x-forwarded-for")?.split(",")[0].trim() 
+            ?? null;
+
+        const userAgent = c.req.header("user-agent") ?? null;
+
+        const { user, ...tokens } = await authService.signIn(payload, ipAddress, userAgent);
+
+        // Tokens are only sent as http-only cookies so they can't be read by scripts on the page.
+        TokenService.setAuthenticationCookies(c, "user", tokens);
+        return c.json({ success: true, data: { user } }, 200);
     }
 )
