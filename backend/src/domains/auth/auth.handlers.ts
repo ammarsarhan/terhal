@@ -67,12 +67,22 @@ export const refreshHandler = factory.createHandlers(
             return c.json({ success: true, data: { user } }, 200);
         } catch (error) {
             // Clear the cookies when the session is over, so the browser stops sending them.
-            // Other errors (like the database being down) keep them, since the session may still be valid.
             if (error instanceof UnauthorizedError || error instanceof ForbiddenError) {
                 TokenService.clearAuthenticationCookies(c, "user");
             }
-
+            
+            // Other errors (like the database being down) keep them, since the session may still be valid.
             throw error;
         }
+    }
+)
+
+export const signOutHandler = factory.createHandlers(
+    async (c) => {
+        const refreshToken = TokenService.getRefreshToken(c, "user");
+        await authService.signOut(refreshToken);
+
+        TokenService.clearAuthenticationCookies(c, "user");
+        return c.json({ success: true }, 200);
     }
 )

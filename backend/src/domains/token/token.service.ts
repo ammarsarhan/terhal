@@ -44,10 +44,14 @@ const config = {
 } as const satisfies Record<Audience, Record<string, string>>;
 
 export default class TokenService {
+    // Lax requires the frontend and backend to be on the same site (e.g. terhal.com and api.terhal.com).
+    // On separate domains (e.g. two *.vercel.app subdomains) the browser won't send these cookies from the frontend at all.
+    // If that ever happens, switch to SameSite=None and add a middleware that rejects unsafe requests (POST, PUT, PATCH, DELETE)
+    // whose Origin header isn't FRONTEND_URL, since None sends the cookies from any site.
     private static readonly baseCookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+        sameSite: "Lax",
     } as const;
 
     // Read lazily so the app can still boot without it; only token operations fail.

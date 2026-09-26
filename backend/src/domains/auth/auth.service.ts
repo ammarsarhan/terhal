@@ -139,4 +139,14 @@ export default class AuthService {
             expiresAt
         };
     }
+
+    // Revokes the session behind this refresh token. Signing out always succeeds, even when the session is already gone.
+    signOut = async (refreshToken: string | undefined) => {
+        if (!refreshToken) return;
+
+        await prisma.userSession.updateMany({
+            where: { refreshToken: TokenService.hashRefreshToken(refreshToken), revokedAt: null },
+            data: { revokedAt: new Date() }
+        });
+    }
 }
