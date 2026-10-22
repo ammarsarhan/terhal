@@ -1,7 +1,8 @@
 import "./env.js";
 import { Redis, type RedisOptions } from "ioredis";
 
-// Two separate Redis services: the cache may evict keys (allkeys-lru), the queue must never evict (noeviction).
+// The cache may evict keys (allkeys-lru), the queue must never evict (noeviction). Locally they're separate instances; on
+// Render both URLs point at the queue's instance for now (see render.yaml).
 const cacheUrl = process.env.CACHE_URL;
 const queueUrl = process.env.QUEUE_URL;
 

@@ -97,18 +97,18 @@ the first is invited by an admin.
 
 ## Render services
 
-Production and staging are separate Render environments with the same four resources each, all in Frankfurt (next to
-Neon's AWS Frankfurt region). Both backend services build from the repo root so pnpm can see the lockfile.
+`render.yaml` describes the backend in one Render project, in Frankfurt next to Neon's AWS Frankfurt region. For now only
+the staging environment exists, on free instances:
 
-| Service | Type           | Build                                                                     | Start                                        |
-| ------- | -------------- | ------------------------------------------------------------------------- | -------------------------------------------- |
-| server  | Web service    | `pnpm install --frozen-lockfile && pnpm turbo build --filter=@terhal/backend` | `pnpm --filter @terhal/backend start`, after `db:deploy` as the pre-deploy command |
-| worker  | Background worker | same as server                                                        | `pnpm --filter @terhal/backend start:worker` |
-| cache   | Key Value      | `maxmemoryPolicy: allkeys-lru`                                            |                                              |
-| queue   | Key Value      | `maxmemoryPolicy: noeviction`                                             |                                              |
+| Service          | Type                | Notes                                                                                   |
+| ---------------- | ------------------- | --------------------------------------------------------------------------------------- |
+| `server-staging` | Web service (free)  | Builds from the repo root so pnpm can see the lockfile. Runs `db:deploy` before starting. |
+| `queue-staging`  | Key Value (free)    | `noeviction`. Serves as both `QUEUE_URL` and `CACHE_URL` until the cache gets its own. |
 
-Only the server runs migrations, so the two never race on deploy. `DATABASE_URL` is the Neon branch's pooled URL and
-`DATABASE_URL_UNPOOLED` its direct URL, used only for migrations.
+Free web services sleep after 15 minutes without traffic and have no shell, so seed from your machine against the Neon
+branch. The `main` environment is added when Terhal launches. The worker (no free plan) is added with the first real job,
+along with a paid, persisted queue. Only the server runs migrations, so the two never race on deploy. `DATABASE_URL` is
+the Neon branch's pooled URL and `DATABASE_URL_UNPOOLED` its direct URL, used only for migrations.
 
 **Client IPs.** Rate limits read the caller's address from `CF-Connecting-IP`, which Render's Cloudflare edge sets and
 clients can't override. In every new environment, check that a spoofed header is ignored: send the same failing sign in
