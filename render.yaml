@@ -1,0 +1,234 @@
+# Render Blueprint: the backend's infrastructure for both environments, in one Render project. The Blueprint syncs from
+# main; each environment's services deploy their own branch (production: main, staging: staging).
+#
+# Secrets (sync: false) are asked for once, when the Blueprint is first created, and never overwritten after that. Each
+# environment needs its own values:
+#   DATABASE_URL           the Neon branch's pooled URL
+#   DATABASE_URL_UNPOOLED  the Neon branch's direct URL, only for migrations
+#   ADMIN_SECRET           openssl rand -base64 32. Changing it signs every admin out.
+#   TOTP_ENCRYPTION_KEY    openssl rand -base64 32. Changing it breaks every admin's authenticator setup.
+#   RESEND_KEY             the Resend API key
+#
+# Keep the two environments identical apart from names, branches, hosts and secrets.
+
+projects:
+  - name: terhal
+    environments:
+      - name: production
+        # Production and staging can't reach each other's private network.
+        networking:
+          isolation: enabled
+        services:
+          - type: web
+            name: server
+            runtime: node
+            region: frankfurt
+            plan: starter
+            branch: main
+            buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm turbo run build --filter=@terhal/backend
+            # Only the server migrates, so the server and the worker never race on deploy.
+            preDeployCommand: pnpm --filter @terhal/backend db:deploy
+            startCommand: pnpm --filter @terhal/backend start
+            healthCheckPath: /health
+            # Deploys only once CI has passed on the commit.
+            autoDeployTrigger: checksPass
+            # Anything that can change the backend build. Web changes don't redeploy it.
+            buildFilter:
+              paths:
+                - backend/**
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - turbo.json
+                - .nvmrc
+            domains:
+              - api.terhal.co
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: DATABASE_URL
+                sync: false
+              - key: DATABASE_URL_UNPOOLED
+                sync: false
+              - key: QUEUE_URL
+                fromService:
+                  type: keyvalue
+                  name: queue
+                  property: connectionString
+              - key: CACHE_URL
+                fromService:
+                  type: keyvalue
+                  name: cache
+                  property: connectionString
+              - key: SITE_URL
+                value: https://terhal.co
+              - key: DASHBOARD_URL
+                value: https://dashboard.terhal.co
+              - key: ADMIN_URL
+                value: https://admin.terhal.co
+              - key: RESEND_EMAIL
+                value: Terhal <no-reply@terhal.co>
+              - key: ADMIN_SECRET
+                sync: false
+              - key: TOTP_ENCRYPTION_KEY
+                sync: false
+              - key: RESEND_KEY
+                sync: false
+
+          - type: worker
+            name: worker
+            runtime: node
+            region: frankfurt
+            plan: starter
+            branch: main
+            buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm turbo run build --filter=@terhal/backend
+            startCommand: pnpm --filter @terhal/backend start:worker
+            autoDeployTrigger: checksPass
+            buildFilter:
+              paths:
+                - backend/**
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - turbo.json
+                - .nvmrc
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: DATABASE_URL
+                sync: false
+              - key: QUEUE_URL
+                fromService:
+                  type: keyvalue
+                  name: queue
+                  property: connectionString
+              - key: CACHE_URL
+                fromService:
+                  type: keyvalue
+                  name: cache
+                  property: connectionString
+
+          # BullMQ needs keys to never be evicted, and jobs to survive a restart.
+          - type: keyvalue
+            name: queue
+            region: frankfurt
+            plan: 256mb
+            maxmemoryPolicy: noeviction
+            persistenceMode: journal-snapshot
+            # Private network only.
+            ipAllowList: []
+
+          # Cache only: evicts the least recently used keys when full, and starts empty after a restart.
+          - type: keyvalue
+            name: cache
+            region: frankfurt
+            plan: 256mb
+            maxmemoryPolicy: allkeys-lru
+            persistenceMode: "off"
+            ipAllowList: []
+
+      - name: staging
+        networking:
+          isolation: enabled
+        services:
+          - type: web
+            name: server-staging
+            runtime: node
+            region: frankfurt
+            plan: starter
+            branch: staging
+            buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm turbo run build --filter=@terhal/backend
+            preDeployCommand: pnpm --filter @terhal/backend db:deploy
+            startCommand: pnpm --filter @terhal/backend start
+            healthCheckPath: /health
+            autoDeployTrigger: checksPass
+            buildFilter:
+              paths:
+                - backend/**
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - turbo.json
+                - .nvmrc
+            domains:
+              - api.staging.terhal.co
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: DATABASE_URL
+                sync: false
+              - key: DATABASE_URL_UNPOOLED
+                sync: false
+              - key: QUEUE_URL
+                fromService:
+                  type: keyvalue
+                  name: queue-staging
+                  property: connectionString
+              - key: CACHE_URL
+                fromService:
+                  type: keyvalue
+                  name: cache-staging
+                  property: connectionString
+              - key: SITE_URL
+                value: https://staging.terhal.co
+              - key: DASHBOARD_URL
+                value: https://dashboard.staging.terhal.co
+              - key: ADMIN_URL
+                value: https://admin.staging.terhal.co
+              - key: RESEND_EMAIL
+                value: Terhal Staging <no-reply@terhal.co>
+              - key: ADMIN_SECRET
+                sync: false
+              - key: TOTP_ENCRYPTION_KEY
+                sync: false
+              - key: RESEND_KEY
+                sync: false
+
+          - type: worker
+            name: worker-staging
+            runtime: node
+            region: frankfurt
+            plan: starter
+            branch: staging
+            buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm turbo run build --filter=@terhal/backend
+            startCommand: pnpm --filter @terhal/backend start:worker
+            autoDeployTrigger: checksPass
+            buildFilter:
+              paths:
+                - backend/**
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - turbo.json
+                - .nvmrc
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: DATABASE_URL
+                sync: false
+              - key: QUEUE_URL
+                fromService:
+                  type: keyvalue
+                  name: queue-staging
+                  property: connectionString
+              - key: CACHE_URL
+                fromService:
+                  type: keyvalue
+                  name: cache-staging
+                  property: connectionString
+
+          - type: keyvalue
+            name: queue-staging
+            region: frankfurt
+            plan: 256mb
+            maxmemoryPolicy: noeviction
+            persistenceMode: journal-snapshot
+            ipAllowList: []
+
+          - type: keyvalue
+            name: cache-staging
+            region: frankfurt
+            plan: 256mb
+            maxmemoryPolicy: allkeys-lru
+            persistenceMode: "off"
+            ipAllowList: []
