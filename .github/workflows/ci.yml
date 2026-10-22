@@ -1,0 +1,68 @@
+# Runs on every push and PR to the three long-lived branches. Render waits for this to pass before deploying,
+# and branch protection on staging/main requires it before a merge.
+name: CI
+
+on:
+  push:
+    branches: [dev, staging, main]
+  pull_request:
+    branches: [dev, staging, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Same images as docker-compose.yml, so CI matches local development.
+    services:
+      db:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: terhal
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      cache:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+      queue:
+        image: redis:8-alpine
+        ports:
+          - 6380:6379
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/terhal
+      DATABASE_URL_UNPOOLED: postgresql://postgres:postgres@localhost:5432/terhal
+      CACHE_URL: redis://localhost:6379
+      QUEUE_URL: redis://localhost:6380
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # Version comes from "packageManager" in package.json.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Proves every migration applies cleanly to an empty database, the same way Render runs them on deploy.
+      - run: pnpm --filter @terhal/backend generate
+      - run: pnpm --filter @terhal/backend db:deploy
+
+      - run: pnpm turbo run typecheck lint test build

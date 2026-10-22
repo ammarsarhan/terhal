@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd .. && pnpm turbo run build --filter=@terhal/web",
+  "regions": ["fra1"],
+  "git": {
+    "deploymentEnabled": {
+      "dev": false
+    }
+  }
+}

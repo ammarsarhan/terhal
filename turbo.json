@@ -1,0 +1,30 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "tasks": {
+    "generate": {
+      "inputs": ["prisma/schema/**"],
+      "outputs": ["generated/**"]
+    },
+    "build": {
+      "dependsOn": ["^generate", "generate", "^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    // next build rewrites .next/types while next typegen + tsc read it, so the two can't run at the same time.
+    "@terhal/web#build": {
+      "dependsOn": ["^generate", "^build", "typecheck"],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^generate", "generate"]
+    },
+    "lint": {},
+    "test": {
+      "dependsOn": ["^generate", "generate"]
+    },
+    "dev": {
+      "dependsOn": ["^generate", "generate"],
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

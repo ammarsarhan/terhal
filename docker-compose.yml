@@ -1,0 +1,37 @@
+# Local stand-ins for Neon Postgres and the two Render Key Value instances.
+# Fixed, so the containers and volumes keep their names whatever the repo folder is called.
+name: terhal
+
+services:
+  db:
+    # Same major version as the Neon project.
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: terhal
+    ports:
+      - "5432:5432"
+    volumes:
+      # Postgres 18 images keep data under /var/lib/postgresql/18, so mount the parent directory.
+      - db:/var/lib/postgresql
+
+  cache:
+    image: redis:8-alpine
+    # A cache is allowed to forget: evict the least recently used keys once memory is full.
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+
+  queue:
+    image: redis:8-alpine
+    # BullMQ requires noeviction, otherwise Redis can silently drop jobs under memory pressure. AOF keeps jobs across restarts.
+    command: redis-server --maxmemory-policy noeviction --appendonly yes
+    ports:
+      - "6380:6379"
+    volumes:
+      - queue:/data
+
+volumes:
+  db:
+  queue:

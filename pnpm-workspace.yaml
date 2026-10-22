@@ -1,0 +1,21 @@
+packages:
+  - backend
+  - web
+
+# Shared versions for anything that crosses the backend/frontend boundary. Hono in particular must be the same
+# copy everywhere, otherwise the frontends can't type check the RPC client against the backend's routes.
+catalog:
+  hono: ^4.13.12
+  zod: ^4.6.5
+  "@types/node": ^26.5.1
+
+onlyBuiltDependencies:
+  - "@prisma/engines"
+  - prisma
+  - esbuild
+  - msgpackr-extract
+  - argon2
+
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver
