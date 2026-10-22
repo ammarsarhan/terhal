@@ -1,0 +1,36 @@
+# After every merge into staging or main, fast-forwards dev to it, so dev always contains both. Branch protection requires
+# PRs to be up to date with their base, and each merge adds a merge commit to the base that the source branch doesn't
+# have. With dev holding every merge commit, the next dev → staging PR is up to date, and its merge brings main's merge
+# commits into staging, so the staging → main PR after it is too.
+#
+# Only ever fast-forwards: no commits of its own, and it never moves dev past work that isn't on the branch. PRs into
+# staging and main must use merge commits (squash and rebase are turned off), or dev wouldn't be an ancestor.
+name: Sync dev
+
+on:
+  push:
+    branches: [staging, main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-dev
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Fast-forward dev
+        run: |
+          if git merge-base --is-ancestor origin/dev "$GITHUB_SHA"; then
+            git push origin "$GITHUB_SHA:refs/heads/dev"
+          else
+            echo "::warning::dev has commits that aren't on $GITHUB_REF_NAME, so it can't be fast-forwarded. Merge $GITHUB_REF_NAME into dev by hand."
+          fi
