@@ -113,3 +113,16 @@ the Neon branch's pooled URL and `DATABASE_URL_UNPOOLED` its direct URL, used on
 **Client IPs.** Rate limits read the caller's address from `CF-Connecting-IP`, which Render's Cloudflare edge sets and
 clients can't override. In every new environment, check that a spoofed header is ignored: send the same failing sign in
 with a different `CF-Connecting-IP` each time and make sure the limit still kicks in.
+
+## Branches and releases
+
+Work happens on `dev`. Changes reach `staging` and then `main` only through PRs, which need a passing `check` and have to
+be up to date with their base. Merge them with a merge commit (squash and rebase are turned off):
+
+```sh
+gh pr merge <number> --merge --subject "<message>."
+```
+
+After each merge into `staging` or `main`, the Sync dev workflow fast-forwards `dev` to it, so `dev` always contains both
+branches and the next PR up the chain is never behind. Pull `dev` before starting new work. If you committed to `dev`
+while a merge was landing, the workflow can't fast-forward it and says so; merge that branch into `dev` by hand.
