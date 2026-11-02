@@ -10,7 +10,7 @@ import {
   TotpSetup,
 } from "@terhal/contracts";
 import type { Context } from "hono";
-import { AppError } from "../../../platform/errors/app-error.js";
+import { AppError } from "../../../platform/errors/app-error";
 import {
   ADMIN_COOKIE_AUTH,
   adminChallenge,
@@ -20,23 +20,23 @@ import {
   requireAdmin,
   setAdminChallenge,
   setAdminSession,
-} from "../../../platform/http/authenticate.js";
-import { body, createRouter, json, problemResponse } from "../../../platform/http/router.js";
+} from "../../../platform/http/authenticate";
+import { body, createRouter, json, problemResponse } from "../../../platform/http/router";
 import {
   bodyKey,
   createRateLimitKey,
   getClientIp,
   ipKey,
   rateLimit,
-} from "../../../platform/rate-limit/rate-limit.js";
+} from "../../../platform/rate-limit/rate-limit";
 import {
   acceptInvitation,
   previewInvitation,
   startTotpSetup,
-} from "../application/admin-invitations.js";
-import { checkPassword, verifySignIn } from "../application/admin-sign-in.js";
-import { currentAdmin } from "../application/admins.js";
-import { createSession, refreshSession, signOut } from "../application/sessions.js";
+} from "../application/admin-invitations";
+import { checkPassword, verifySignIn } from "../application/admin-sign-in";
+import { currentAdmin } from "../application/admins";
+import { createSession, refreshSession, signOut } from "../application/sessions";
 
 const MINUTE = 60 * 1000;
 

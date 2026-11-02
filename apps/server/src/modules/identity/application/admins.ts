@@ -1,7 +1,7 @@
 import type { Admin as AdminResponse } from "@terhal/contracts";
-import type { Admin } from "../../../../generated/prisma/client.js";
-import { prisma } from "../../../platform/db/prisma.js";
-import { AppError } from "../../../platform/errors/app-error.js";
+import type { Admin } from "../../../../generated/prisma/client";
+import { prisma } from "../../../platform/db/prisma";
+import { AppError } from "../../../platform/errors/app-error";
 
 // Prisma models never leave the server: every response is an explicit DTO, so new columns (and secrets like
 // passwordHash) are never exposed by accident.

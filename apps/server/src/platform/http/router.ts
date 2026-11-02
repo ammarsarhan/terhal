@@ -1,7 +1,7 @@
 import { OpenAPIHono, type Hook } from "@hono/zod-openapi";
 import { Problem, type ValidationIssue } from "@terhal/contracts";
 import type { Env } from "hono";
-import { validationFailed } from "../errors/validation.js";
+import { validationFailed } from "../errors/validation";
 
 // Turns a failed request validation into our problem format instead of a raw ZodError dump.
 const rejectInvalid: Hook<unknown, Env, string, unknown> = (result) => {

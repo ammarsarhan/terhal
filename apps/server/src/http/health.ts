@@ -1,7 +1,7 @@
 import { Hono } from "hono";
-import { prisma } from "../platform/db/prisma.js";
-import { isShuttingDown } from "../platform/lifecycle/state.js";
-import { cache } from "../platform/redis/connections.js";
+import { prisma } from "../platform/db/prisma";
+import { isShuttingDown } from "../platform/lifecycle/state";
+import { cache } from "../platform/redis/connections";
 
 const CHECK_TIMEOUT_MS = 2_000;
 

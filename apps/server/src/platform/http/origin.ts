@@ -1,5 +1,5 @@
 import { createMiddleware } from "hono/factory";
-import { AppError } from "../errors/app-error.js";
+import { AppError } from "../errors/app-error";
 
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 

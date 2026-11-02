@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import { createServer } from "node:https";
 import { serve } from "@hono/node-server";
-import { router } from "./http/router.js";
-import { env } from "./platform/config/env.js";
-import { handleShutdown } from "./platform/lifecycle/shutdown.js";
-import { logger } from "./platform/logger/logger.js";
+import { router } from "./http/router";
+import { env } from "./platform/config/env";
+import { handleShutdown } from "./platform/lifecycle/shutdown";
+import { logger } from "./platform/logger/logger";
 
 // Locally the API runs on https://api.local.terhal.co with an mkcert certificate, so its cookies behave exactly as in
 // production (same site as the frontends, Secure). On the VPS these are never set: the edge Caddy terminates TLS.

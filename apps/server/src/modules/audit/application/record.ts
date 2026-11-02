@@ -1,6 +1,6 @@
 import type { AuditAction } from "@terhal/contracts";
-import type { Prisma } from "../../../../generated/prisma/client.js";
-import { prisma } from "../../../platform/db/prisma.js";
+import type { Prisma } from "../../../../generated/prisma/client";
+import { prisma } from "../../../platform/db/prisma";
 
 export interface AuditEntry {
   // The admin who did it, or null for the system (the seed) and for sign in attempts on emails that aren't admins.

@@ -1,5 +1,5 @@
 import type { ValidationIssue } from "@terhal/contracts";
-import { AppError } from "./app-error.js";
+import { AppError } from "./app-error";
 
 // 400 VALIDATION_FAILED listing each problem, the same shape whether the schema or a use case found it.
 export const validationFailed = (errors: ValidationIssue[]) =>

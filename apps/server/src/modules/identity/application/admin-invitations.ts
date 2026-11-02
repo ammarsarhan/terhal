@@ -1,15 +1,15 @@
 import { auditActions, type AcceptAdminInvitation } from "@terhal/contracts";
-import { origins } from "../../../platform/config/env.js";
-import { decrypt, encrypt } from "../../../platform/crypto/encryption.js";
-import { hash } from "../../../platform/crypto/passwords.js";
-import { generateToken, hashToken } from "../../../platform/crypto/tokens.js";
-import { createTotpSecret, getTotpUri, verifyTotp } from "../../../platform/crypto/totp.js";
-import { prisma } from "../../../platform/db/prisma.js";
-import { sendEmail } from "../../../platform/email/email.js";
-import { AppError } from "../../../platform/errors/app-error.js";
-import { logger } from "../../../platform/logger/logger.js";
-import { recordAudit } from "../../audit/index.js";
-import { INVITATION_LIFETIME_MS } from "../domain/policy.js";
+import { origins } from "../../../platform/config/env";
+import { decrypt, encrypt } from "../../../platform/crypto/encryption";
+import { hash } from "../../../platform/crypto/passwords";
+import { generateToken, hashToken } from "../../../platform/crypto/tokens";
+import { createTotpSecret, getTotpUri, verifyTotp } from "../../../platform/crypto/totp";
+import { prisma } from "../../../platform/db/prisma";
+import { sendEmail } from "../../../platform/email/email";
+import { AppError } from "../../../platform/errors/app-error";
+import { logger } from "../../../platform/logger/logger";
+import { recordAudit } from "../../audit/index";
+import { INVITATION_LIFETIME_MS } from "../domain/policy";
 
 const invalid = () =>
   new AppError({

@@ -6,9 +6,9 @@ import {
   signChallenge,
   verifyAccessToken,
   verifyChallenge,
-} from "../crypto/jwt.js";
-import { prisma } from "../db/prisma.js";
-import { AppError } from "../errors/app-error.js";
+} from "../crypto/jwt";
+import { prisma } from "../db/prisma";
+import { AppError } from "../errors/app-error";
 
 // The frontends and the API are subdomains of the same site (e.g. admin.terhal.co and api.terhal.co), so Lax cookies
 // reach the API on the frontends' fetches while staying off requests started by other sites. The cookies are host-only

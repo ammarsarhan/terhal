@@ -1,6 +1,6 @@
 import type { AuditAction, ListAuditLogs } from "@terhal/contracts";
-import type { Prisma } from "../../../../generated/prisma/client.js";
-import { prisma } from "../../../platform/db/prisma.js";
+import type { Prisma } from "../../../../generated/prisma/client";
+import { prisma } from "../../../platform/db/prisma";
 
 // One page at a time, newest first unless asked otherwise. Ties are broken by time and then id, so the order is stable
 // and the cursor never skips or repeats a log, even while new ones are being written.

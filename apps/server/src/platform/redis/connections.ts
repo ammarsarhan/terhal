@@ -1,4 +1,4 @@
-import { env } from "../config/env.js";
+import { env } from "../config/env";
 import { Redis, type RedisOptions } from "ioredis";
 
 // The cache may evict keys (allkeys-lru), the queue must never evict (noeviction). They're separate instances, locally

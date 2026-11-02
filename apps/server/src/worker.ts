@@ -1,8 +1,8 @@
 import { Worker } from "bullmq";
-import { processors } from "./platform/jobs/processors.js";
-import { handleShutdown } from "./platform/lifecycle/shutdown.js";
-import { logger } from "./platform/logger/logger.js";
-import { createQueueConnection } from "./platform/redis/connections.js";
+import { processors } from "./platform/jobs/processors";
+import { handleShutdown } from "./platform/lifecycle/shutdown";
+import { logger } from "./platform/logger/logger";
+import { createQueueConnection } from "./platform/redis/connections";
 
 // The worker entry point, the worker container in deploy/compose.yml. No HTTP: it only pulls jobs off the queue Redis.
 const workers = Object.entries(processors).map(([name, processor]) => {

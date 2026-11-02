@@ -1,9 +1,9 @@
 import { createRoute } from "@hono/zod-openapi";
 import { AuditLog, ListAuditLogs, page } from "@terhal/contracts";
-import { ADMIN_COOKIE_AUTH, requireAdmin } from "../../../platform/http/authenticate.js";
-import { createRouter, json, problemResponse } from "../../../platform/http/router.js";
-import { createRateLimitKey, rateLimit } from "../../../platform/rate-limit/rate-limit.js";
-import { listLogs } from "../application/list-logs.js";
+import { ADMIN_COOKIE_AUTH, requireAdmin } from "../../../platform/http/authenticate";
+import { createRouter, json, problemResponse } from "../../../platform/http/router";
+import { createRateLimitKey, rateLimit } from "../../../platform/rate-limit/rate-limit";
+import { listLogs } from "../application/list-logs";
 
 // Any active admin can read the log. Reading it isn't recorded, or the log would fill up with its own reads. Limited per
 // admin, generously enough for typing in the search box.

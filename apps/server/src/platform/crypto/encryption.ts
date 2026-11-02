@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
-import { env } from "../config/env.js";
+import { env } from "../config/env";
 
 // Encrypts small secrets we need to read back later (like two-factor secrets), so a leaked database alone isn't enough
 // to use them. AES-256-GCM also detects tampering: a modified value fails to decrypt instead of decrypting to garbage.

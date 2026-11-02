@@ -1,12 +1,12 @@
 import { auditActions } from "@terhal/contracts";
-import type { Admin } from "../../../../generated/prisma/client.js";
-import { signAccessToken } from "../../../platform/crypto/jwt.js";
-import { generateToken, hashToken } from "../../../platform/crypto/tokens.js";
-import { prisma } from "../../../platform/db/prisma.js";
-import { AppError } from "../../../platform/errors/app-error.js";
-import { recordAudit } from "../../audit/index.js";
-import { SESSION_ABSOLUTE_LIFETIME_MS, sessionExpiry, sessionsToRevoke } from "../domain/policy.js";
-import { inactive, toAdminResponse } from "./admins.js";
+import type { Admin } from "../../../../generated/prisma/client";
+import { signAccessToken } from "../../../platform/crypto/jwt";
+import { generateToken, hashToken } from "../../../platform/crypto/tokens";
+import { prisma } from "../../../platform/db/prisma";
+import { AppError } from "../../../platform/errors/app-error";
+import { recordAudit } from "../../audit/index";
+import { SESSION_ABSOLUTE_LIFETIME_MS, sessionExpiry, sessionsToRevoke } from "../domain/policy";
+import { inactive, toAdminResponse } from "./admins";
 
 export interface RequestInfo {
   ipAddress: string | null;

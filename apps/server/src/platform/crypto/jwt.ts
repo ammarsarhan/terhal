@@ -1,7 +1,7 @@
 import { sign, verify } from "hono/jwt";
 import { JwtTokenExpired } from "hono/utils/jwt/types";
-import { env } from "../config/env.js";
-import { AppError } from "../errors/app-error.js";
+import { env } from "../config/env";
+import { AppError } from "../errors/app-error";
 
 // Who a token was issued to. Each audience has its own secret, so a token from one can never be used as another.
 // Staff join as a second audience once their auth is built.

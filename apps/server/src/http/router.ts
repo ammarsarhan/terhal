@@ -1,15 +1,15 @@
 import { Scalar } from "@scalar/hono-api-reference";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
-import { auditRoutes } from "../modules/audit/index.js";
-import { adminAuthRoutes } from "../modules/identity/index.js";
-import { env, origins, type Audience } from "../platform/config/env.js";
-import { ADMIN_COOKIE_AUTH, adminCookies } from "../platform/http/authenticate.js";
-import { requireOrigin } from "../platform/http/origin.js";
-import { createRouter } from "../platform/http/router.js";
-import { notFound, onError } from "./errors.js";
-import { health } from "./health.js";
-import { accessLog, bodyLimit, requestContext, requestId, timeout } from "./middleware.js";
+import { auditRoutes } from "../modules/audit/index";
+import { adminAuthRoutes } from "../modules/identity/index";
+import { env, origins, type Audience } from "../platform/config/env";
+import { ADMIN_COOKIE_AUTH, adminCookies } from "../platform/http/authenticate";
+import { requireOrigin } from "../platform/http/origin";
+import { createRouter } from "../platform/http/router";
+import { notFound, onError } from "./errors";
+import { health } from "./health";
+import { accessLog, bodyLimit, requestContext, requestId, timeout } from "./middleware";
 
 // Composition root: global middleware and every module's routes are mounted here. Order matters: the request id and its
 // context first, so everything after (including errors) can log with it.

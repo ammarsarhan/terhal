@@ -1,6 +1,6 @@
 import { pino } from "pino";
-import { env } from "../config/env.js";
-import { currentContext } from "../context/request-context.js";
+import { env } from "../config/env";
+import { currentContext } from "../context/request-context";
 
 // Values that must never reach the logs, wherever they appear in a logged object (top level or one level down).
 // Request bodies are never logged whole.

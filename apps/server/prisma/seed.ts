@@ -2,9 +2,9 @@
 // No names or passwords live in the environment: the admin gets a single-use link and sets up their own account.
 // Only works while no admin exists. Every admin after the first is invited by an admin.
 import { Email } from "@terhal/contracts";
-import { inviteFirstAdmin } from "../src/modules/identity/index.js";
-import { prisma } from "../src/platform/db/prisma.js";
-import { AppError } from "../src/platform/errors/app-error.js";
+import { inviteFirstAdmin } from "../src/modules/identity/index";
+import { prisma } from "../src/platform/db/prisma";
+import { AppError } from "../src/platform/errors/app-error";
 
 const main = async () => {
   const value = process.env.ADMIN_EMAIL?.trim();

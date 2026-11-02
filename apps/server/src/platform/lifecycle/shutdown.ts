@@ -1,8 +1,8 @@
 import type { Redis } from "ioredis";
-import { prisma } from "../db/prisma.js";
-import { logger } from "../logger/logger.js";
-import { cache } from "../redis/connections.js";
-import { isShuttingDown, markShuttingDown } from "./state.js";
+import { prisma } from "../db/prisma";
+import { logger } from "../logger/logger";
+import { cache } from "../redis/connections";
+import { isShuttingDown, markShuttingDown } from "./state";
 
 const closeRedis = async (client: Redis) => {
   // quit() waits for pending replies; a client that never connected or is reconnecting has none.

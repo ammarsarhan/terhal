@@ -1,11 +1,11 @@
 import { auditActions } from "@terhal/contracts";
-import { decrypt } from "../../../platform/crypto/encryption.js";
-import { compare, compareAgainstNothing } from "../../../platform/crypto/passwords.js";
-import { verifyTotp } from "../../../platform/crypto/totp.js";
-import { prisma } from "../../../platform/db/prisma.js";
-import { AppError } from "../../../platform/errors/app-error.js";
-import { recordAudit } from "../../audit/index.js";
-import { inactive } from "./admins.js";
+import { decrypt } from "../../../platform/crypto/encryption";
+import { compare, compareAgainstNothing } from "../../../platform/crypto/passwords";
+import { verifyTotp } from "../../../platform/crypto/totp";
+import { prisma } from "../../../platform/db/prisma";
+import { AppError } from "../../../platform/errors/app-error";
+import { recordAudit } from "../../audit/index";
+import { inactive } from "./admins";
 
 const wrongCredentials = () =>
   new AppError({

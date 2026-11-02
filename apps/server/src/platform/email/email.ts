@@ -1,6 +1,6 @@
 import { Resend } from "resend";
-import { env } from "../config/env.js";
-import { logger } from "../logger/logger.js";
+import { env } from "../config/env";
+import { logger } from "../logger/logger";
 
 // Created on first use, so the app can still boot without the API key.
 let client: Resend | undefined;

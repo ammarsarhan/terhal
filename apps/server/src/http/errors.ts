@@ -3,10 +3,10 @@ import type { ErrorCode, Problem } from "@terhal/contracts";
 import type { Context, ErrorHandler, NotFoundHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { currentContext } from "../platform/context/request-context.js";
-import { isDatabaseUnavailable } from "../platform/db/errors.js";
-import { AppError } from "../platform/errors/app-error.js";
-import { logger } from "../platform/logger/logger.js";
+import { currentContext } from "../platform/context/request-context";
+import { isDatabaseUnavailable } from "../platform/db/errors";
+import { AppError } from "../platform/errors/app-error";
+import { logger } from "../platform/logger/logger";
 
 // Codes for errors Hono's own middleware throws as HTTPException (e.g. malformed JSON, body limit).
 const codeForStatus: Partial<Record<number, ErrorCode>> = {

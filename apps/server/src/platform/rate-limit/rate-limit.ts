@@ -2,10 +2,10 @@ import { createHash } from "node:crypto";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { getConnInfo } from "@hono/node-server/conninfo";
-import { env } from "../config/env.js";
-import { cache } from "../redis/connections.js";
-import { AppError } from "../errors/app-error.js";
-import { logger } from "../logger/logger.js";
+import { env } from "../config/env";
+import { cache } from "../redis/connections";
+import { AppError } from "../errors/app-error";
+import { logger } from "../logger/logger";
 
 // What a limit is counted against.
 export type RateLimitSubject = "ip" | "identifier" | "user";

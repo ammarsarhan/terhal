@@ -4,8 +4,8 @@ import { HTTPException } from "hono/http-exception";
 import { requestId as honoRequestId } from "hono/request-id";
 import { routePath } from "hono/route";
 import { timeout as honoTimeout } from "hono/timeout";
-import { runWithContext } from "../platform/context/request-context.js";
-import { logger } from "../platform/logger/logger.js";
+import { runWithContext } from "../platform/context/request-context";
+import { logger } from "../platform/logger/logger";
 
 // Takes the client's X-Request-Id when it is a short, safe token (so the web app can correlate its
 // own logs), otherwise generates one. Echoed back on every response.
