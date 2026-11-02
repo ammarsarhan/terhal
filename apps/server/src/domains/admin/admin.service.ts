@@ -1,9 +1,9 @@
 import { prisma } from "../../platform/db/prisma.js";
 import { origins } from "../../platform/config/env.js";
-import { generateToken, hashToken } from "../../shared/utils/token.js";
-import { decrypt, encrypt } from "../../shared/utils/encryption.js";
-import { createTotpSecret, getTotpUri, verifyTotp } from "../../shared/utils/totp.js";
-import { compare, compareAgainstNothing, hash } from "../../shared/utils/hash.js";
+import { generateToken, hashToken } from "../../platform/crypto/tokens.js";
+import { decrypt, encrypt } from "../../platform/crypto/encryption.js";
+import { createTotpSecret, getTotpUri, verifyTotp } from "../../platform/crypto/totp.js";
+import { compare, compareAgainstNothing, hash } from "../../platform/crypto/passwords.js";
 import {
   BadRequestError,
   ConflictError,
