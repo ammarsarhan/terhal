@@ -2,9 +2,10 @@ import { createHash } from "node:crypto";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { getConnInfo } from "@hono/node-server/conninfo";
-import { cache } from "../../platform/redis/connections.js";
-import { AppError } from "../../platform/errors/app-error.js";
-import { logger } from "../../platform/logger/logger.js";
+import { env } from "../config/env.js";
+import { cache } from "../redis/connections.js";
+import { AppError } from "../errors/app-error.js";
+import { logger } from "../logger/logger.js";
 
 // What a limit is counted against.
 export type RateLimitSubject = "ip" | "identifier" | "user";
@@ -22,13 +23,13 @@ export const createRateLimitKey = (scope: string, subject: RateLimitSubject, val
   return `${scope}:${subject}:${hashed}`;
 };
 
-// On the VPS the API is only reachable through the edge Caddy, which overwrites X-Real-IP with the address that actually
-// connected (deploy/edge/Caddyfile), so a client can't choose its own. X-Forwarded-For isn't used: its leftmost entries
-// are whatever the client sent. Without the header (e.g. locally), fall back to the socket's address. Behind a proxy
-// that's the proxy, so every caller would share one limit: stricter, never looser. Checked on every new environment with
-// a spoofed header (see the README).
+// Read from CLIENT_IP_HEADER when it's set. On the VPS that's X-Real-IP, which the edge Caddy overwrites with the
+// address that actually connected (deploy/edge/Caddyfile), so a client can't choose its own; it must only be set where
+// that has been checked with a spoofed header (see the README). X-Forwarded-For is never used: its leftmost entries are
+// whatever the client sent. Unset (e.g. locally), the socket's address is used. Behind a proxy that's the proxy, so
+// every caller would share one limit: stricter, never looser.
 export const getClientIp = (c: Context) => {
-  const real = c.req.header("x-real-ip")?.trim();
+  const real = env.CLIENT_IP_HEADER ? c.req.header(env.CLIENT_IP_HEADER)?.trim() : undefined;
   if (real) return real;
 
   try {

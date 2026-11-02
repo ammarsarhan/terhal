@@ -3,7 +3,7 @@ import AuditService from "./audit.service.js";
 import { listLogsSchema } from "./audit.validators.js";
 import { authorizeAdmin } from "../admin/admin.middleware.js";
 import validate from "../../shared/middleware/validate.js";
-import { createRateLimitKey, rateLimit } from "../../shared/middleware/rateLimit.js";
+import { createRateLimitKey, rateLimit } from "../../platform/rate-limit/rate-limit.js";
 
 const factory = createFactory();
 

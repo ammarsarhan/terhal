@@ -17,7 +17,7 @@ import {
   getClientIp,
   ipKey,
   rateLimit,
-} from "../../shared/middleware/rateLimit.js";
+} from "../../platform/rate-limit/rate-limit.js";
 
 const factory = createFactory();
 

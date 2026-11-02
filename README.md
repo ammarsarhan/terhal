@@ -151,8 +151,8 @@ From `/opt/terhal/<env>`, plain `docker compose ps`, `logs -f server` and `resta
 
 Seed the first admin from your machine against the Neon branch, as in [The first admin](#the-first-admin).
 
-**Client IPs.** Rate limits read the caller's address from `X-Real-IP`, which Caddy overwrites with the address that
-actually connected. This only holds while nothing reaches the server except through Caddy, so never publish the server's
+**Client IPs.** Rate limits read the caller's address from the header named by `CLIENT_IP_HEADER` (`x-real-ip` on the
+VPS), which Caddy overwrites with the address that actually connected. Unset, as locally, they use the socket's address. This only holds while nothing reaches the server except through Caddy, so never publish the server's
 port. In every new environment, check that a spoofed header is ignored: send the same failing sign in with a different
 `X-Real-IP` each time and make sure the limit still kicks in. If Cloudflare's proxy is ever put in front, Caddy will see
 Cloudflare's addresses instead: configure `trusted_proxies` and read `CF-Connecting-IP` then.

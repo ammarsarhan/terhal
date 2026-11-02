@@ -10,7 +10,7 @@
 }
 
 # The API. Caddy overwrites X-Real-IP with the address that actually connected, whatever the client sent, and the rate
-# limiter trusts only that header (apps/server/src/shared/middleware/rateLimit.ts).
+# limiter trusts only that header (apps/server/src/platform/rate-limit/rate-limit.ts).
 (api) {
 	import common
 	reverse_proxy {args[0]}:8080 {
