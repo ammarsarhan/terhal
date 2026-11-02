@@ -4,9 +4,10 @@
 
 ## Context
 
-Hagz, the reference for this codebase's structure, generates a typed client from a committed OpenAPI document, because
-its mobile apps stay on old versions in the wild. Terhal's only client is its own web app, deployed with the API, and
-it was already typed through Hono RPC (`hc<AppType>`). We still want API documentation and a reviewable contract.
+A common way to type an API's clients is to generate them from a committed OpenAPI document, which pays off when
+clients such as mobile apps stay on old versions in the wild. Terhal's only client is its own web app, deployed with the
+API, and it was already typed through Hono RPC (`hc<AppType>`). We still want API documentation and a reviewable
+contract.
 
 ## Decision
 
