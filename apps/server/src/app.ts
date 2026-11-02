@@ -6,7 +6,7 @@ import { secureHeaders } from "hono/secure-headers";
 
 import { notFound, onError } from "./http/errors.js";
 import { accessLog, bodyLimit, requestContext, requestId, timeout } from "./http/middleware.js";
-import { requireOrigin } from "./shared/middleware/origin.js";
+import { requireOrigin } from "./platform/http/origin.js";
 import { origins, type Audience } from "./platform/config/env.js";
 
 import health from "./domains/health/health.routes.js";

@@ -10,7 +10,7 @@ import {
   adminVerifySchema,
 } from "./admin.validators.js";
 import { AppError } from "../../platform/errors/app-error.js";
-import validate from "../../shared/middleware/validate.js";
+import validate from "../../platform/http/validate.js";
 import {
   bodyKey,
   createRateLimitKey,
