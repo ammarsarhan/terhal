@@ -1,5 +1,5 @@
-# Runs on every push and PR to the three long-lived branches. Render waits for this to pass before deploying,
-# and branch protection on staging/main requires it before a merge.
+# Runs on every push and PR to the three long-lived branches. Deploy (deploy.yml) waits for this to pass on staging and
+# main, and branch protection on staging/main requires it before a merge.
 name: CI
 
 on:
@@ -61,7 +61,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Proves every migration applies cleanly to an empty database, the same way Render runs them on deploy.
+      # Proves every migration applies cleanly to an empty database, the same way deploys run them.
       - run: pnpm --filter @terhal/backend generate
       - run: pnpm --filter @terhal/backend db:deploy
 
