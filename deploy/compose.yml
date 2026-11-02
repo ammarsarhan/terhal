@@ -1,0 +1,104 @@
+# One environment (staging or main) on the VPS, in /opt/terhal/<env>. deploy.sh copies this file there and writes .env
+# next to it (the images and the environment's name), so `docker compose ps` / `logs` / `restart` work from that folder
+# with no extra flags. Secrets live in app.env beside it, written by hand once (see app.env.example) and never in git.
+#
+# Nothing here publishes a port. The only way in is the edge Caddy (deploy/edge), which reaches the server and the web app
+# over the shared `edge` network by their aliases, e.g. staging-server. That's also what makes X-Real-IP trustworthy:
+# Caddy sets it, and no client can reach the server without going through Caddy.
+
+x-logging: &logging
+  # Docker keeps container logs forever by default, which slowly fills a small disk.
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "5"
+
+x-backend: &backend
+  image: ${BACKEND_IMAGE:?}
+  restart: unless-stopped
+  logging: *logging
+  env_file: app.env
+  environment:
+    NODE_ENV: production
+    CACHE_URL: redis://cache:6379
+    QUEUE_URL: redis://queue:6379
+  depends_on:
+    cache:
+      condition: service_healthy
+    queue:
+      condition: service_healthy
+
+services:
+  server:
+    <<: *backend
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8080/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    networks:
+      default:
+      edge:
+        aliases: ["${TERHAL_ENV:?}-server"]
+
+  worker:
+    <<: *backend
+    command: ["node", "dist/src/worker.js"]
+    # Gives in-flight jobs time to finish on redeploy before Docker kills it.
+    stop_grace_period: 60s
+
+  # Run by deploy.sh before the rest starts (`docker compose run --rm migrate`), never by `up`. Only this runs
+  # migrations, so the server and the worker never race them.
+  migrate:
+    <<: *backend
+    command: ["node_modules/.bin/prisma", "migrate", "deploy"]
+    restart: "no"
+    depends_on: []
+    profiles: [migrate]
+
+  web:
+    image: ${WEB_IMAGE:?}
+    restart: unless-stopped
+    logging: *logging
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/', { redirect: 'manual' }).then((r) => process.exit(r.status < 500 ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    networks:
+      default:
+      edge:
+        aliases: ["${TERHAL_ENV:?}-web"]
+
+  # Same split as local development: the cache may forget, the queue never may.
+  cache:
+    image: redis:8-alpine
+    restart: unless-stopped
+    logging: *logging
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --save ""
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  queue:
+    image: redis:8-alpine
+    restart: unless-stopped
+    logging: *logging
+    # BullMQ requires noeviction, otherwise Redis can silently drop jobs. AOF keeps jobs across restarts.
+    command: redis-server --maxmemory-policy noeviction --appendonly yes
+    volumes:
+      - queue:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+networks:
+  edge:
+    external: true
+
+volumes:
+  queue:
