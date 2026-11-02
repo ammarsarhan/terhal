@@ -1,6 +1,6 @@
 # The web image: the customer site, the staff dashboard and the admin panel (web/proxy.ts picks one by host).
 # NEXT_PUBLIC_API_URL is baked into the browser bundle at build time, so each environment gets its own image.
-# Built from the repo root: docker build -f web/Dockerfile --build-arg NEXT_PUBLIC_API_URL=https://api.terhal.co .
+# Built from the repo root: docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_URL=https://api.terhal.co .
 
 FROM node:24-slim AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
@@ -13,20 +13,20 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_TELEMETRY_DISABLED=1
 RUN test -n "$NEXT_PUBLIC_API_URL" || (echo "NEXT_PUBLIC_API_URL build arg is required" && exit 1)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/server/package.json apps/server/
-COPY web/package.json web/
+COPY apps/web/package.json apps/web/
 # The web app type checks against the server's routes, so it needs the server's dependencies too.
 RUN pnpm install --frozen-lockfile --filter @terhal/web... --filter terhal
 COPY tsconfig.base.json turbo.json ./
 COPY apps/server apps/server
-COPY web web
+COPY apps/web apps/web
 RUN pnpm turbo run build --filter=@terhal/web
 
 # standalone output: a minimal server.js with only the files it traces, laid out from the repo root.
 FROM node:24-slim AS runtime
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000
 WORKDIR /app
-COPY --from=build --chown=node:node /app/web/.next/standalone ./
-COPY --from=build --chown=node:node /app/web/.next/static web/.next/static
+COPY --from=build --chown=node:node /app/apps/web/.next/standalone ./
+COPY --from=build --chown=node:node /app/apps/web/.next/static apps/web/.next/static
 USER node
 EXPOSE 3000
-CMD ["node", "web/server.js"]
+CMD ["node", "apps/web/server.js"]

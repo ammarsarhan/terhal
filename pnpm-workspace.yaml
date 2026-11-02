@@ -1,6 +1,5 @@
 packages:
   - apps/*
-  - web
 
 # Shared versions for anything that crosses the server/web boundary. Hono in particular must be the same
 # copy everywhere, otherwise the frontends can't type check the RPC client against the server's routes.

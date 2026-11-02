@@ -4,8 +4,8 @@ pnpm workspace + Turborepo.
 
 ```
 apps/server/  Hono API + BullMQ worker + Prisma (Neon Postgres)
-web/       Next.js: the customer site, the staff dashboard and the admin panel, one host each
-deploy/    Docker Compose stacks, Caddy and scripts for the VPS
+apps/web/     Next.js: the customer site, the staff dashboard and the admin panel, one host each
+deploy/       Docker Compose stacks, Caddy and scripts for the VPS
 ```
 
 Everything except the database runs in Docker on one VPS, behind Caddy. The database is Neon (`main` and `staging`
@@ -13,7 +13,7 @@ branches).
 
 ## Hosts
 
-Each audience gets its own origin, so a bug on one site can't act on another. `web/proxy.ts` maps each host onto its
+Each audience gets its own origin, so a bug on one site can't act on another. `apps/web/proxy.ts` maps each host onto its
 section of the app (`app/site`, `app/staff`, `app/admin`), and the API only accepts each audience's routes from its own
 origin.
 
@@ -83,7 +83,7 @@ New-Item -ItemType Directory -Force .certs | Out-Null; mkcert -cert-file .certs/
 pnpm install
 docker compose up -d                 # Postgres on :5432, cache Redis on :6379, queue Redis on :6380
 cp apps/server/.env.example apps/server/.env # then set ADMIN_SECRET and TOTP_ENCRYPTION_KEY: openssl rand -base64 32
-cp web/.env.example web/.env.local
+cp apps/web/.env.example apps/web/.env.local
 pnpm --filter @terhal/server db:deploy
 
 pnpm dev                             # API server + web

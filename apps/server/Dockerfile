@@ -11,7 +11,7 @@ WORKDIR /app
 FROM base AS manifests
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/server/package.json apps/server/
-COPY web/package.json web/
+COPY apps/web/package.json apps/web/
 
 FROM manifests AS build
 RUN pnpm install --frozen-lockfile --filter @terhal/server... --filter terhal

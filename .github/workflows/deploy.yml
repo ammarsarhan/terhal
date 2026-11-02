@@ -43,7 +43,7 @@ jobs:
           - image: server
             dockerfile: apps/server/Dockerfile
           - image: web
-            dockerfile: web/Dockerfile
+            dockerfile: apps/web/Dockerfile
 
     steps:
       - uses: actions/checkout@v5

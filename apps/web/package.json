@@ -2,7 +2,7 @@
   "name": "@terhal/web",
   "private": true,
   "scripts": {
-    "dev": "next dev --experimental-https --experimental-https-key ../.certs/local-key.pem --experimental-https-cert ../.certs/local.pem",
+    "dev": "next dev --experimental-https --experimental-https-key ../../.certs/local-key.pem --experimental-https-cert ../../.certs/local.pem",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
