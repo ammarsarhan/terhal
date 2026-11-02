@@ -72,6 +72,9 @@ jobs:
       # Tests start their own Postgres and Redis (testcontainers) and apply every migration to an empty database first,
       # the same way deploys run them. PRs only check what they change; pushes check everything.
       - name: Lint, typecheck, test, build
+        env:
+          # Checkouts only have the remote's branches, so diff against origin/<base>.
+          TURBO_SCM_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || '' }}
         run: pnpm turbo run lint typecheck test build ${{ github.event_name == 'pull_request' && '--affected' || '' }}
 
   # The single status check branch protection requires.
