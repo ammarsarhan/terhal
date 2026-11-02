@@ -62,7 +62,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # Proves every migration applies cleanly to an empty database, the same way deploys run them.
-      - run: pnpm --filter @terhal/backend generate
-      - run: pnpm --filter @terhal/backend db:deploy
+      - run: pnpm --filter @terhal/server generate
+      - run: pnpm --filter @terhal/server db:deploy
 
       - run: pnpm turbo run typecheck lint test build

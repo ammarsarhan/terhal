@@ -30,7 +30,7 @@ importers:
         specifier: ^2.11.8
         version: 2.11.8
 
-  backend:
+  apps/server:
     dependencies:
       '@hono/node-server':
         specifier: ^2.1.1
@@ -96,9 +96,9 @@ importers:
       '@tanstack/react-table':
         specifier: ^9.3.1
         version: 9.3.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      '@terhal/backend':
+      '@terhal/server':
         specifier: workspace:*
-        version: link:../backend
+        version: link:../apps/server
       hono:
         specifier: 'catalog:'
         version: 4.13.13

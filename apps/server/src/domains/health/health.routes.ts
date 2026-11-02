@@ -9,7 +9,7 @@ const health = new Hono()
         return c.json({
             success: true,
             data: {
-                service: "backend",
+                service: "server",
                 timestamp: new Date().toISOString(),
             },
         });

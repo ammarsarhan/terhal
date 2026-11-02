@@ -1,5 +1,5 @@
 {
-  "name": "@terhal/backend",
+  "name": "@terhal/server",
   "private": true,
   "type": "module",
   "exports": {

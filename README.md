@@ -3,7 +3,7 @@
 pnpm workspace + Turborepo.
 
 ```
-backend/   Hono API + BullMQ worker + Prisma (Neon Postgres)
+apps/server/  Hono API + BullMQ worker + Prisma (Neon Postgres)
 web/       Next.js: the customer site, the staff dashboard and the admin panel, one host each
 deploy/    Docker Compose stacks, Caddy and scripts for the VPS
 ```
@@ -82,12 +82,12 @@ New-Item -ItemType Directory -Force .certs | Out-Null; mkcert -cert-file .certs/
 ```sh
 pnpm install
 docker compose up -d                 # Postgres on :5432, cache Redis on :6379, queue Redis on :6380
-cp backend/.env.example backend/.env # then set ADMIN_SECRET and TOTP_ENCRYPTION_KEY: openssl rand -base64 32
+cp apps/server/.env.example apps/server/.env # then set ADMIN_SECRET and TOTP_ENCRYPTION_KEY: openssl rand -base64 32
 cp web/.env.example web/.env.local
-pnpm --filter @terhal/backend db:deploy
+pnpm --filter @terhal/server db:deploy
 
-pnpm dev                             # backend server + web
-pnpm --filter @terhal/backend dev:worker
+pnpm dev                             # API server + web
+pnpm --filter @terhal/server dev:worker
 ```
 
 Open `https://local.terhal.co:3000` for the customer site, `https://dashboard.local.terhal.co:3000` for staff and
@@ -95,7 +95,7 @@ Open `https://local.terhal.co:3000` for the customer site, `https://dashboard.lo
 
 ### The first admin
 
-Set `ADMIN_EMAIL` in `backend/.env` and run `pnpm --filter @terhal/backend db:seed`. With `RESEND_KEY` empty the
+Set `ADMIN_EMAIL` in `apps/server/.env` and run `pnpm --filter @terhal/server db:seed`. With `RESEND_KEY` empty the
 invitation email, link included, is printed to the console. The seed only works while no admin exists; every admin after
 the first is invited by an admin.
 
@@ -118,7 +118,7 @@ its direct URL, used only for migrations.
 
 `.github/workflows/deploy.yml` runs after CI passes on a push to `staging` or `main`:
 
-1. Builds the backend image (server, worker and migrations) and the web image for that environment (the API's URL is baked
+1. Builds the server image (API, worker and migrations) and the web image for that environment (the API's URL is baked
    in at build time), and pushes both to `ghcr.io/ammarsarhan`, tagged with the commit.
 2. Over SSH as `deploy`, copies `deploy/compose.yml` and `deploy/caddy/<env>.caddy` to the VPS and runs `deploy/deploy.sh`:
    pull, migrate, `docker compose up --wait` until every container is healthy, then reload Caddy with the routes.

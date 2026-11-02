@@ -13,8 +13,8 @@ x-logging: &logging
     max-size: 10m
     max-file: "5"
 
-x-backend: &backend
-  image: ${BACKEND_IMAGE:?}
+x-server: &server
+  image: ${SERVER_IMAGE:?}
   restart: unless-stopped
   logging: *logging
   env_file: app.env
@@ -30,7 +30,7 @@ x-backend: &backend
 
 services:
   server:
-    <<: *backend
+    <<: *server
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:8080/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
       interval: 10s
@@ -43,7 +43,7 @@ services:
         aliases: ["${TERHAL_ENV:?}-server"]
 
   worker:
-    <<: *backend
+    <<: *server
     command: ["node", "dist/src/worker.js"]
     # Gives in-flight jobs time to finish on redeploy before Docker kills it.
     stop_grace_period: 60s
@@ -51,7 +51,7 @@ services:
   # Run by deploy.sh before the rest starts (`docker compose run --rm migrate`), never by `up`. Only this runs
   # migrations, so the server and the worker never race them.
   migrate:
-    <<: *backend
+    <<: *server
     command: ["node_modules/.bin/prisma", "migrate", "deploy"]
     restart: "no"
     depends_on: []

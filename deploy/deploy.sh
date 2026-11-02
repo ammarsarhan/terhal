@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs on the VPS as the deploy user, sent over SSH by .github/workflows/deploy.yml:
-#   ssh deploy@vps bash -s -- <env> <backend image> <web image> < deploy/deploy.sh
+#   ssh deploy@vps bash -s -- <env> <server image> <web image> < deploy/deploy.sh
 # The workflow first copies compose.yml and <env>.caddy into /opt/terhal/incoming/<env>/ and logs Docker into GHCR.
 #
 # Order matters: migrations run against the new schema before any new container starts, then the stack is replaced and
@@ -12,7 +12,7 @@
 set -euo pipefail
 
 env="${1:?environment (staging or main)}"
-backend_image="${2:?backend image}"
+server_image="${2:?server image}"
 web_image="${3:?web image}"
 
 case "$env" in
@@ -36,13 +36,13 @@ install -m 644 "$incoming/compose.yml" "$dir/compose.yml"
 cat > "$dir/.env" <<EOF
 COMPOSE_PROJECT_NAME=terhal-$env
 TERHAL_ENV=$env
-BACKEND_IMAGE=$backend_image
+SERVER_IMAGE=$server_image
 WEB_IMAGE=$web_image
 EOF
 
 cd "$dir"
 
-echo "Pulling $backend_image and $web_image"
+echo "Pulling $server_image and $web_image"
 docker compose pull --quiet
 
 echo "Running migrations"

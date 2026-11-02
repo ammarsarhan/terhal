@@ -1,5 +1,5 @@
 import { hc } from "hono/client";
-import type { AppType, ErrorCode } from "@terhal/backend/client";
+import type { AppType, ErrorCode } from "@terhal/server/client";
 
 const endpoint = process.env.NEXT_PUBLIC_API_URL ?? "https://api.local.terhal.co:8080";
 

@@ -12,12 +12,12 @@ ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_TELEMETRY_DISABLED=1
 RUN test -n "$NEXT_PUBLIC_API_URL" || (echo "NEXT_PUBLIC_API_URL build arg is required" && exit 1)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY backend/package.json backend/
+COPY apps/server/package.json apps/server/
 COPY web/package.json web/
-# The web app type checks against the backend's routes, so it needs the backend's dependencies too.
+# The web app type checks against the server's routes, so it needs the server's dependencies too.
 RUN pnpm install --frozen-lockfile --filter @terhal/web... --filter terhal
 COPY tsconfig.base.json turbo.json ./
-COPY backend backend
+COPY apps/server apps/server
 COPY web web
 RUN pnpm turbo run build --filter=@terhal/web
 

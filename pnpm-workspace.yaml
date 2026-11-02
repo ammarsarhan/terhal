@@ -1,9 +1,9 @@
 packages:
-  - backend
+  - apps/*
   - web
 
-# Shared versions for anything that crosses the backend/frontend boundary. Hono in particular must be the same
-# copy everywhere, otherwise the frontends can't type check the RPC client against the backend's routes.
+# Shared versions for anything that crosses the server/web boundary. Hono in particular must be the same
+# copy everywhere, otherwise the frontends can't type check the RPC client against the server's routes.
 catalog:
   hono: ^4.13.12
   zod: ^4.6.5

@@ -9,7 +9,7 @@
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
-    "@terhal/backend": "workspace:*",
+    "@terhal/server": "workspace:*",
     "@tabler/icons-react": "^3.48.0",
     "@tanstack/react-query": "^5.104.3",
     "@tanstack/react-table": "^9.3.1",
