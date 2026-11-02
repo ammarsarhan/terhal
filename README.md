@@ -1,12 +1,18 @@
 # Terhal
 
-pnpm workspace + Turborepo.
+pnpm workspace + Turborepo. Read [docs/architecture.md](docs/architecture.md) before adding a module, a job or a
+migration.
 
-```
-apps/server/  Hono API + BullMQ worker + Prisma (Neon Postgres)
-apps/web/     Next.js: the customer site, the staff dashboard and the admin panel, one host each
-deploy/       Docker Compose stacks, Caddy and scripts for the VPS
-```
+| Path                 | What                                                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| `apps/server`        | Hono API (`src/app.ts`) and BullMQ worker (`src/worker.ts`), one codebase, Prisma + Neon Postgres |
+| `apps/web`           | Next.js: the customer site, the staff dashboard and the admin panel, one host each        |
+| `packages/contracts` | Request and response schemas (plain zod), shared by the API and the web app               |
+| `tooling/tsconfig`   | Shared TypeScript config                                                                  |
+| `tooling/eslint`     | Shared ESLint config (type-aware `typescript-eslint`)                                     |
+| `infra`              | Local Postgres, Redis (cache) and Redis (queue)                                           |
+| `deploy`             | Docker Compose stacks, Caddy and scripts for the VPS                                      |
+| `docs`               | Architecture and decision records                                                         |
 
 Everything except the database runs in Docker on one VPS, behind Caddy. The database is Neon (`main` and `staging`
 branches).
@@ -93,11 +99,27 @@ pnpm --filter @terhal/server dev:worker
 Open `https://local.terhal.co:3000` for the customer site, `https://dashboard.local.terhal.co:3000` for staff and
 `https://admin.local.terhal.co:3000` for admin.
 
+### API docs
+
+`https://api.local.terhal.co:8080/v1/docs` while `pnpm dev` runs (also on staging, never in production), from the
+OpenAPI document at `/v1/openapi.json`. `apps/server/openapi.json` is the committed contract: the contract test fails
+when the API changes it; after an intended change, regenerate it with `pnpm --filter @terhal/server test -u` and commit
+it with the change.
+
 ### The first admin
 
 Set `ADMIN_EMAIL` in `apps/server/.env` and run `pnpm --filter @terhal/server db:seed`. With `RESEND_KEY` empty the
 invitation email, link included, is printed to the console. The seed only works while no admin exists; every admin after
 the first is invited by an admin.
+
+## Checks
+
+```sh
+pnpm lint          # ESLint (type-aware, plus the server's layer rules) in every workspace that has a config
+pnpm format        # Prettier, writes changes; CI runs pnpm format:check
+pnpm typecheck
+pnpm test          # Needs Docker: starts throwaway Postgres and Redis containers
+```
 
 ## The VPS
 
@@ -159,7 +181,8 @@ Cloudflare's addresses instead: configure `trusted_proxies` and read `CF-Connect
 
 ## Branches and releases
 
-Work happens on `dev`. Changes reach `staging` and then `main` only through PRs, which need a passing `check` and have to
+Work happens on `dev`. Changes reach `staging` and then `main` only through PRs (CI rejects a PR into `staging` from
+anything but `dev`, and into `main` from anything but `staging`), which need a passing `check` and have to
 be up to date with their base. Merge them with a merge commit (squash and rebase are turned off):
 
 ```sh
