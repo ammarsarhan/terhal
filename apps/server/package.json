@@ -8,9 +8,9 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "dev:worker": "tsx watch src/worker.ts",
-    "build": "tsc",
-    "start": "node dist/src/server.js",
-    "start:worker": "node dist/src/worker.js",
+    "build": "tsup",
+    "start": "node --enable-source-maps dist/server.js",
+    "start:worker": "node --enable-source-maps dist/worker.js",
     "typecheck": "tsc --noEmit",
     "test": "echo \"no tests yet\" && exit 0",
     "generate": "prisma generate --no-hints",
@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "tsup": "^8.5.1",
     "tsx": "^4.23.0",
     "typescript": "~6.0.3"
   }

@@ -35,4 +35,4 @@ COPY apps/server/prisma/migrations apps/server/prisma/migrations
 WORKDIR /app/apps/server
 USER node
 EXPOSE 8080
-CMD ["node", "dist/src/server.js"]
+CMD ["node", "--enable-source-maps", "dist/server.js"]

@@ -44,7 +44,7 @@ services:
 
   worker:
     <<: *server
-    command: ["node", "dist/src/worker.js"]
+    command: ["node", "--enable-source-maps", "dist/worker.js"]
     # Gives in-flight jobs time to finish on redeploy before Docker kills it.
     stop_grace_period: 60s
 
