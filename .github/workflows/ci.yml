@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    # Same images as docker-compose.yml, so CI matches local development.
+    # Same images as infra/docker-compose.yml, so CI matches local development.
     services:
       db:
         image: postgres:18-alpine

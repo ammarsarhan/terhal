@@ -2,7 +2,7 @@ import "./env.js";
 import { Redis, type RedisOptions } from "ioredis";
 
 // The cache may evict keys (allkeys-lru), the queue must never evict (noeviction). They're separate instances, locally
-// (docker-compose.yml) and on the VPS (deploy/compose.yml).
+// (infra/docker-compose.yml) and on the VPS (deploy/compose.yml).
 const cacheUrl = process.env.CACHE_URL;
 const queueUrl = process.env.QUEUE_URL;
 

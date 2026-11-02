@@ -81,7 +81,7 @@ New-Item -ItemType Directory -Force .certs | Out-Null; mkcert -cert-file .certs/
 
 ```sh
 pnpm install
-docker compose up -d                 # Postgres on :5432, cache Redis on :6379, queue Redis on :6380
+pnpm infra:up                        # Postgres on :5432, cache Redis on :6379, queue Redis on :6380
 cp apps/server/.env.example apps/server/.env # then set ADMIN_SECRET and TOTP_ENCRYPTION_KEY: openssl rand -base64 32
 cp apps/web/.env.example apps/web/.env.local
 pnpm --filter @terhal/server db:deploy
