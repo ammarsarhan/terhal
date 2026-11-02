@@ -7,7 +7,8 @@ import { compare, compareAgainstNothing, hash } from "../../platform/crypto/pass
 import { AppError } from "../../platform/errors/app-error.js";
 import MessagingService from "../messaging/messaging.service.js";
 import TokenService from "../token/token.service.js";
-import AuditService, { auditActions } from "../audit/audit.service.js";
+import { auditActions } from "@terhal/contracts";
+import { recordAudit } from "../../modules/audit/index.js";
 import { AdminStatus } from "../../../generated/prisma/enums.js";
 import type { Admin } from "../../../generated/prisma/client.js";
 import type { AcceptAdminInvitationPayload } from "./admin.validators.js";
@@ -61,7 +62,7 @@ export default class AdminService {
         });
 
         for (const { id, email } of pending) {
-          await AuditService.record(
+          await recordAudit(
             {
               adminId: null,
               action: auditActions.INVITATION_REVOKED,
@@ -112,7 +113,7 @@ export default class AdminService {
       });
     }
 
-    await AuditService.record({
+    await recordAudit({
       adminId: invitorId,
       action: auditActions.INVITATION_SENT,
       entityType: "AdminInvitation",
@@ -176,7 +177,7 @@ export default class AdminService {
 
       if (count === 0) return;
 
-      await AuditService.record(
+      await recordAudit(
         {
           adminId: null,
           action: auditActions.INVITATION_TOTP_ISSUED,
@@ -222,7 +223,7 @@ export default class AdminService {
     const step = verifyTotp(decrypt(invitation.totpSecret), code, null);
 
     if (step === null) {
-      await AuditService.record({
+      await recordAudit({
         adminId: null,
         action: auditActions.INVITATION_ACCEPT_FAILED,
         entityType: "AdminInvitation",
@@ -285,7 +286,7 @@ export default class AdminService {
       });
 
       // Recorded in the same transaction, so an admin can't exist without a record of how they got in.
-      await AuditService.record(
+      await recordAudit(
         {
           adminId: created.id,
           action: auditActions.INVITATION_ACCEPTED,
@@ -297,7 +298,7 @@ export default class AdminService {
         tx,
       );
 
-      await AuditService.record(
+      await recordAudit(
         {
           adminId: created.id,
           action: auditActions.TOTP_ENABLED,
@@ -349,7 +350,7 @@ export default class AdminService {
         });
 
         for (const { id } of sessionsToRevoke) {
-          await AuditService.record(
+          await recordAudit(
             {
               adminId: admin.id,
               action: auditActions.SESSION_REVOKED,
@@ -373,7 +374,7 @@ export default class AdminService {
         },
       });
 
-      await AuditService.record(
+      await recordAudit(
         {
           adminId: admin.id,
           action: auditActions.SIGN_IN_SUCCEEDED,
@@ -397,7 +398,7 @@ export default class AdminService {
     // Attempts on emails that aren't admins are still recorded, since they can mean someone is guessing at accounts.
     if (!admin) {
       await compareAgainstNothing(password);
-      await AuditService.record({
+      await recordAudit({
         adminId: null,
         action: auditActions.SIGN_IN_PASSWORD_FAILED,
         entityType: "Email",
@@ -412,7 +413,7 @@ export default class AdminService {
     }
 
     if (!(await compare(password, admin.passwordHash))) {
-      await AuditService.record({
+      await recordAudit({
         adminId: admin.id,
         action: auditActions.SIGN_IN_PASSWORD_FAILED,
         entityType: "Admin",
@@ -428,7 +429,7 @@ export default class AdminService {
 
     // Checked after the password, so only someone who knows it learns the account is inactive.
     if (admin.status !== AdminStatus.ACTIVE) {
-      await AuditService.record({
+      await recordAudit({
         adminId: admin.id,
         action: auditActions.SIGN_IN_BLOCKED,
         entityType: "Admin",
@@ -451,7 +452,7 @@ export default class AdminService {
       });
 
     // A correct password with no code after it can mean the password leaked, so the half-finished sign in is recorded too.
-    await AuditService.record({
+    await recordAudit({
       adminId: admin.id,
       action: auditActions.SIGN_IN_PASSWORD_PASSED,
       entityType: "Admin",
@@ -480,7 +481,7 @@ export default class AdminService {
         detail: "Your sign in has expired. Please enter your email and password again.",
       });
     if (admin.status !== AdminStatus.ACTIVE) {
-      await AuditService.record({
+      await recordAudit({
         adminId: admin.id,
         action: auditActions.SIGN_IN_BLOCKED,
         entityType: "Admin",
@@ -497,7 +498,7 @@ export default class AdminService {
 
     // A wrong code after a correct password is worth recording: it can mean someone has the password but not the phone.
     const fail = async (reason: "wrong_code" | "code_reused") => {
-      await AuditService.record({
+      await recordAudit({
         adminId: admin.id,
         action: auditActions.SIGN_IN_TOTP_FAILED,
         entityType: "Admin",
@@ -571,7 +572,7 @@ export default class AdminService {
     if (session.admin.status !== AdminStatus.ACTIVE) {
       await prisma.$transaction(async (tx) => {
         await tx.adminSession.update({ where: { id: session.id }, data: { revokedAt: now } });
-        await AuditService.record(
+        await recordAudit(
           {
             adminId: session.admin.id,
             action: auditActions.SESSION_REVOKED,
@@ -638,7 +639,7 @@ export default class AdminService {
         data: { revokedAt: new Date() },
       });
       if (count > 0)
-        await AuditService.record(
+        await recordAudit(
           {
             adminId: session.adminId,
             action: auditActions.SIGN_OUT,

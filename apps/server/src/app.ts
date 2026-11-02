@@ -11,7 +11,7 @@ import { origins, type Audience } from "./platform/config/env.js";
 
 import health from "./domains/health/health.routes.js";
 import admin from "./domains/admin/admin.routes.js";
-import logs from "./domains/audit/audit.routes.js";
+import { auditRoutes } from "./modules/audit/index.js";
 
 // The customer site, the staff dashboard and the admin panel are separate origins, and each may only call its own routes.
 // Every auth cookie reaches the API from all three (they're the same site), so without this a bug on the customer site
@@ -31,7 +31,7 @@ const app = new Hono()
   .notFound(notFound)
   .route("/health", health)
   .route("/admin", admin)
-  .route("/admin/logs", logs);
+  .route("/", auditRoutes);
 
 export type AppType = typeof app;
 export default app;

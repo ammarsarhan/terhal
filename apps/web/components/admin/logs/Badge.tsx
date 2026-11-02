@@ -1,5 +1,5 @@
 import { IconInfoCircle } from "@tabler/icons-react";
-import type { AuditAction } from "@terhal/server/client";
+import type { AuditAction } from "@terhal/contracts";
 import { cn } from "@/lib/cn";
 import { actions } from "./Actions";
 

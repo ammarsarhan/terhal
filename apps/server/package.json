@@ -21,9 +21,11 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.1",
+    "@hono/zod-openapi": "^1.6.3",
     "@hono/zod-validator": "^0.9.1",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "@scalar/hono-api-reference": "^0.12.14",
     "@terhal/contracts": "workspace:^",
     "argon2": "^0.45.1",
     "bullmq": "^6.3.14",

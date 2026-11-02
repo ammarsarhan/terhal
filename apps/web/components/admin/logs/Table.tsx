@@ -9,7 +9,7 @@ import type { api } from "@/lib/api";
 import Badge from "./Badge";
 import { sorts, type Order, type Sort } from "./Filters";
 
-export type Log = InferResponseType<typeof api.admin.logs.$get, 200>["data"]["logs"][number];
+export type Log = InferResponseType<typeof api.admin.logs.$get, 200>["data"][number];
 
 const features = tableFeatures({});
 const helper = createColumnHelper<typeof features, Log>();

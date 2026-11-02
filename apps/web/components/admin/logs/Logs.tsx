@@ -87,12 +87,12 @@ export default function Logs() {
         throw new Error((await readError(res)).message);
       }
 
-      return (await res.json()).data;
+      return await res.json();
     },
   });
 
-  const logs = query.data?.logs ?? [];
-  const next = query.data?.cursor ?? null;
+  const logs = query.data?.data ?? [];
+  const next = query.data?.nextCursor ?? null;
   const go = (cursors: (string | undefined)[]) => setPaging({ view, cursors });
 
   return (

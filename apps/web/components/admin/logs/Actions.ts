@@ -1,4 +1,4 @@
-import type { AuditAction } from "@terhal/server/client";
+import type { AuditAction } from "@terhal/contracts";
 
 // The groups the action filter lists, in order.
 export const groups = ["Sign in", "Sessions", "Invitations", "Two-factor"] as const;

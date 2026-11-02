@@ -6,4 +6,3 @@ import type { AppType } from "./app.js";
 export type { AppType };
 export type Client = ReturnType<typeof hc<AppType>>;
 export type { ErrorCode } from "@terhal/contracts";
-export type { AuditAction } from "./domains/audit/audit.service.js";
