@@ -11,6 +11,10 @@ const secret = z.string().min(32, "Expected 32+ characters, e.g. openssl rand -b
 
 const appEnv = z.enum(["development", "staging", "production"]).default("development");
 
+// A blank value (e.g. `RESEND_KEY=` in an env file) means unset.
+const optional = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => (value === "" ? undefined : value), schema.optional());
+
 // Each audience's frontend in this environment, e.g. https://admin.terhal.co. It is both the only browser origin allowed
 // to call that audience's routes and the base of the links emailed to it. Local development (see the README) has
 // defaults; everywhere else a missing one stops the process, so a link can never point at localhost in production.
@@ -44,16 +48,15 @@ const schema = z
     // The header the edge proxy sets to the caller's address, used for per-IP rate limits. Only set it once a spoofed
     // value has been shown to be overwritten in that environment (see the README); unset, the socket address is used
     // (behind a proxy that is the proxy, so every client shares one limit: stricter, never looser).
-    CLIENT_IP_HEADER: z
-      .string()
-      .regex(/^[a-z0-9-]+$/, "Expected a lowercase header name, e.g. x-real-ip")
-      .optional(),
+    CLIENT_IP_HEADER: optional(
+      z.string().regex(/^[a-z0-9-]+$/, "Expected a lowercase header name, e.g. x-real-ip"),
+    ),
     // Local https (see the README). On the VPS the edge Caddy terminates TLS, so these are never set there.
-    TLS_CERT: z.string().optional(),
-    TLS_KEY: z.string().optional(),
+    TLS_CERT: optional(z.string()),
+    TLS_KEY: optional(z.string()),
     // Without a key, emails are printed to the console, which is only allowed in local development.
-    RESEND_KEY: z.string().optional(),
-    RESEND_EMAIL: z.string().optional(),
+    RESEND_KEY: optional(z.string()),
+    RESEND_EMAIL: optional(z.string()),
     // No defaults for secrets: a missing or short one stops the process instead of running insecurely.
     // Signs admin access tokens. Changing it signs every admin out.
     ADMIN_SECRET: secret,
