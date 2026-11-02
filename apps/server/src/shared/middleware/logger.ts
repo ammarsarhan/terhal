@@ -8,4 +8,5 @@ const pattern = new RegExp(`([?&](?:${sensitiveParams.join("|")})=)[^&\\s]*`, "g
 
 export const redact = (text: string) => text.replace(pattern, "$1[REDACTED]");
 
-export const requestLogger = () => logger((message, ...rest) => console.log(redact(message), ...rest));
+export const requestLogger = () =>
+  logger((message, ...rest) => console.log(redact(message), ...rest));

@@ -6,8 +6,8 @@
 # over the shared `edge` network by their aliases, e.g. staging-server. That's also what makes X-Real-IP trustworthy:
 # Caddy sets it, and no client can reach the server without going through Caddy.
 
-x-logging: &logging
-  # Docker keeps container logs forever by default, which slowly fills a small disk.
+x-logging:
+  &logging # Docker keeps container logs forever by default, which slowly fills a small disk.
   driver: json-file
   options:
     max-size: 10m
@@ -32,7 +32,13 @@ services:
   server:
     <<: *server
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:8080/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:8080/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
       interval: 10s
       timeout: 5s
       start_period: 20s
@@ -62,7 +68,13 @@ services:
     restart: unless-stopped
     logging: *logging
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/', { redirect: 'manual' }).then((r) => process.exit(r.status < 500 ? 0 : 1), () => process.exit(1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/', { redirect: 'manual' }).then((r) => process.exit(r.status < 500 ? 0 : 1), () => process.exit(1))",
+        ]
       interval: 10s
       timeout: 5s
       start_period: 20s
