@@ -17,7 +17,10 @@
     "typecheck": {
       "dependsOn": ["^generate", "generate"]
     },
-    "lint": {},
+    // Type-aware rules need the generated Prisma client to resolve its types.
+    "lint": {
+      "dependsOn": ["^generate", "generate"]
+    },
     "test": {
       "dependsOn": ["^generate", "generate"]
     },

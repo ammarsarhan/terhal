@@ -1,0 +1,4 @@
+{
+  "extends": "@terhal/tsconfig/base.json",
+  "include": ["src"]
+}

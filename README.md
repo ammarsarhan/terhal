@@ -1,19 +1,25 @@
 # Terhal
 
-pnpm workspace + Turborepo.
+pnpm workspace + Turborepo. Read [docs/architecture.md](docs/architecture.md) before adding a module, a job or a
+migration.
 
-```
-backend/   Hono API + BullMQ worker + Prisma (Neon Postgres)
-web/       Next.js: the customer site, the staff dashboard and the admin panel, one host each
-deploy/    Docker Compose stacks, Caddy and scripts for the VPS
-```
+| Path                 | What                                                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| `apps/server`        | Hono API (`src/app.ts`) and BullMQ worker (`src/worker.ts`), one codebase, Prisma + Neon Postgres |
+| `apps/web`           | Next.js: the customer site, the staff dashboard and the admin panel, one host each        |
+| `packages/contracts` | Request and response schemas (plain zod), shared by the API and the web app               |
+| `tooling/tsconfig`   | Shared TypeScript config                                                                  |
+| `tooling/eslint`     | Shared ESLint config (type-aware `typescript-eslint`)                                     |
+| `infra`              | Local Postgres, Redis (cache) and Redis (queue)                                           |
+| `deploy`             | Docker Compose stacks, Caddy and scripts for the VPS                                      |
+| `docs`               | Architecture and decision records                                                         |
 
 Everything except the database runs in Docker on one VPS, behind Caddy. The database is Neon (`main` and `staging`
 branches).
 
 ## Hosts
 
-Each audience gets its own origin, so a bug on one site can't act on another. `web/proxy.ts` maps each host onto its
+Each audience gets its own origin, so a bug on one site can't act on another. `apps/web/proxy.ts` maps each host onto its
 section of the app (`app/site`, `app/staff`, `app/admin`), and the API only accepts each audience's routes from its own
 origin.
 
@@ -81,23 +87,39 @@ New-Item -ItemType Directory -Force .certs | Out-Null; mkcert -cert-file .certs/
 
 ```sh
 pnpm install
-docker compose up -d                 # Postgres on :5432, cache Redis on :6379, queue Redis on :6380
-cp backend/.env.example backend/.env # then set ADMIN_SECRET and TOTP_ENCRYPTION_KEY: openssl rand -base64 32
-cp web/.env.example web/.env.local
-pnpm --filter @terhal/backend db:deploy
+pnpm infra:up                        # Postgres on :5432, cache Redis on :6379, queue Redis on :6380
+cp apps/server/.env.example apps/server/.env # then set ADMIN_SECRET and TOTP_ENCRYPTION_KEY: openssl rand -base64 32
+cp apps/web/.env.example apps/web/.env.local
+pnpm --filter @terhal/server db:deploy
 
-pnpm dev                             # backend server + web
-pnpm --filter @terhal/backend dev:worker
+pnpm dev                             # API server + web
+pnpm --filter @terhal/server dev:worker
 ```
 
 Open `https://local.terhal.co:3000` for the customer site, `https://dashboard.local.terhal.co:3000` for staff and
 `https://admin.local.terhal.co:3000` for admin.
 
+### API docs
+
+`https://api.local.terhal.co:8080/v1/docs` while `pnpm dev` runs (also on staging, never in production), from the
+OpenAPI document at `/v1/openapi.json`. `apps/server/openapi.json` is the committed contract: the contract test fails
+when the API changes it; after an intended change, regenerate it with `pnpm --filter @terhal/server test -u` and commit
+it with the change.
+
 ### The first admin
 
-Set `ADMIN_EMAIL` in `backend/.env` and run `pnpm --filter @terhal/backend db:seed`. With `RESEND_KEY` empty the
+Set `ADMIN_EMAIL` in `apps/server/.env` and run `pnpm --filter @terhal/server db:seed`. With `RESEND_KEY` empty the
 invitation email, link included, is printed to the console. The seed only works while no admin exists; every admin after
 the first is invited by an admin.
+
+## Checks
+
+```sh
+pnpm lint          # ESLint (type-aware, plus the server's layer rules) in every workspace that has a config
+pnpm format        # Prettier, writes changes; CI runs pnpm format:check
+pnpm typecheck
+pnpm test          # Needs Docker: starts throwaway Postgres and Redis containers
+```
 
 ## The VPS
 
@@ -118,7 +140,7 @@ its direct URL, used only for migrations.
 
 `.github/workflows/deploy.yml` runs after CI passes on a push to `staging` or `main`:
 
-1. Builds the backend image (server, worker and migrations) and the web image for that environment (the API's URL is baked
+1. Builds the server image (API, worker and migrations) and the web image for that environment (the API's URL is baked
    in at build time), and pushes both to `ghcr.io/ammarsarhan`, tagged with the commit.
 2. Over SSH as `deploy`, copies `deploy/compose.yml` and `deploy/caddy/<env>.caddy` to the VPS and runs `deploy/deploy.sh`:
    pull, migrate, `docker compose up --wait` until every container is healthy, then reload Caddy with the routes.
@@ -151,15 +173,16 @@ From `/opt/terhal/<env>`, plain `docker compose ps`, `logs -f server` and `resta
 
 Seed the first admin from your machine against the Neon branch, as in [The first admin](#the-first-admin).
 
-**Client IPs.** Rate limits read the caller's address from `X-Real-IP`, which Caddy overwrites with the address that
-actually connected. This only holds while nothing reaches the server except through Caddy, so never publish the server's
+**Client IPs.** Rate limits read the caller's address from the header named by `CLIENT_IP_HEADER` (`x-real-ip` on the
+VPS), which Caddy overwrites with the address that actually connected. Unset, as locally, they use the socket's address. This only holds while nothing reaches the server except through Caddy, so never publish the server's
 port. In every new environment, check that a spoofed header is ignored: send the same failing sign in with a different
 `X-Real-IP` each time and make sure the limit still kicks in. If Cloudflare's proxy is ever put in front, Caddy will see
 Cloudflare's addresses instead: configure `trusted_proxies` and read `CF-Connecting-IP` then.
 
 ## Branches and releases
 
-Work happens on `dev`. Changes reach `staging` and then `main` only through PRs, which need a passing `check` and have to
+Work happens on `dev`. Changes reach `staging` and then `main` only through PRs (CI rejects a PR into `staging` from
+anything but `dev`, and into `main` from anything but `staging`), which need a passing `check` and have to
 be up to date with their base. Merge them with a merge commit (squash and rebase are turned off):
 
 ```sh

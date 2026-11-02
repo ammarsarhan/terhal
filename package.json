@@ -10,11 +10,22 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@neon/config": "^1.9.1",
     "@neon/env": "^1.6.1",
-    "turbo": "^2.11.8"
+    "prettier": "3.9.10",
+    "turbo": "^2.11.8",
+    "typescript": "~6.0.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "typescript": "~6.0.3"
+    }
   }
 }

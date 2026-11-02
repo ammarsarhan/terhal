@@ -1,0 +1,60 @@
+{
+  "name": "@terhal/server",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch src/app.ts",
+    "dev:worker": "tsx watch src/worker.ts",
+    "build": "tsup",
+    "start": "node --enable-source-maps dist/app.js",
+    "start:worker": "node --enable-source-maps dist/worker.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "generate": "prisma generate --no-hints",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:status": "prisma migrate status",
+    "db:seed": "prisma db seed",
+    "lint": "eslint .",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "@hono/zod-openapi": "^1.6.3",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "@scalar/hono-api-reference": "^0.12.14",
+    "@terhal/contracts": "workspace:^",
+    "argon2": "^0.45.1",
+    "bullmq": "^6.3.14",
+    "dotenv": "^17.4.2",
+    "hono": "catalog:",
+    "ioredis": "^6.0.0",
+    "otpauth": "^9.5.2",
+    "pg": "^8.23.0",
+    "pino": "^10.4.0",
+    "prisma": "^7.10.0",
+    "resend": "^6.30.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@terhal/eslint-config": "workspace:^",
+    "@terhal/tsconfig": "workspace:^",
+    "@testcontainers/postgresql": "^12.2.1",
+    "@testcontainers/redis": "^12.2.1",
+    "@types/node": "catalog:",
+    "@types/pg": "^8.23.1",
+    "eslint": "^10.13.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-boundaries": "^7.3.0",
+    "pino-pretty": "^13.2.0",
+    "testcontainers": "^12.2.1",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5"
+  }
+}
