@@ -1,17 +1,10 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { env } from "../../platform/config/env.js";
 
 // Encrypts small secrets we need to read back later (like two-factor secrets), so a leaked database alone isn't enough
 // to use them. AES-256-GCM also detects tampering: a modified value fails to decrypt instead of decrypting to garbage.
-const getKey = () => {
-  const secret = process.env.TOTP_ENCRYPTION_KEY;
-  if (!secret)
-    throw new Error(
-      "TOTP_ENCRYPTION_KEY is not defined. Please define it in the environment variables.",
-    );
-
-  // Hashing turns any long random string into the 32 bytes AES-256 needs.
-  return createHash("sha256").update(secret).digest();
-};
+// Hashing turns any long random string into the 32 bytes AES-256 needs.
+const getKey = () => createHash("sha256").update(env.TOTP_ENCRYPTION_KEY).digest();
 
 // Stored as "v1.<iv>.<auth tag>.<ciphertext>", so the format can change later without breaking existing values.
 export const encrypt = (plaintext: string) => {

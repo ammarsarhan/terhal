@@ -1,5 +1,5 @@
 import { prisma } from "../../shared/utils/prisma.js";
-import { getOrigin } from "../../shared/utils/origins.js";
+import { origins } from "../../platform/config/env.js";
 import { generateToken, hashToken } from "../../shared/utils/token.js";
 import { decrypt, encrypt } from "../../shared/utils/encryption.js";
 import { createTotpSecret, getTotpUri, verifyTotp } from "../../shared/utils/totp.js";
@@ -99,7 +99,7 @@ export default class AdminService {
     expiresAt: Date,
     { invitorId, ipAddress }: { invitorId: string | null; ipAddress: string | null },
   ) => {
-    const link = `${getOrigin("admin")}/invite?token=${token}`;
+    const link = `${origins.admin}/invite?token=${token}`;
 
     try {
       await this.messagingService.sendAdminInvitation(email, link, expiresAt);

@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { sign, verify } from "hono/jwt";
+import { env } from "../../platform/config/env.js";
 
 // Who a token was issued to. Each audience has its own secret and cookies, so a token from one can never be used as another.
 // Staff join as a second audience once their auth is built.
@@ -46,15 +47,7 @@ export default class TokenService {
     sameSite: "Lax",
   } as const;
 
-  // Read lazily so the app can still boot without it; only token operations fail.
-  private static getSecret = (audience: Audience) => {
-    const variable = config[audience].secretVariable;
-    const secret = process.env[variable];
-
-    if (!secret)
-      throw new Error(`${variable} is not defined. Please define it in the environment variables.`);
-    return secret;
-  };
+  private static getSecret = (audience: Audience) => env[config[audience].secretVariable];
 
   static generateAccessToken = async <A extends Audience>(
     audience: A,

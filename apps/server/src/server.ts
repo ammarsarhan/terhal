@@ -3,21 +3,22 @@ import { createServer } from "node:https";
 import { serve } from "@hono/node-server";
 
 import app from "./app.js";
+import { env } from "./platform/config/env.js";
 import { prisma } from "./shared/utils/prisma.js";
 import { cache } from "./shared/utils/redis.js";
 
 // Locally the API runs on https://api.local.terhal.co with an mkcert certificate, so its cookies behave exactly as
 // in production (same site as the frontends, Secure). On the VPS these are never set: the edge Caddy terminates TLS.
 const tls =
-  process.env.TLS_CERT && process.env.TLS_KEY
-    ? { cert: readFileSync(process.env.TLS_CERT), key: readFileSync(process.env.TLS_KEY) }
+  env.TLS_CERT && env.TLS_KEY
+    ? { cert: readFileSync(env.TLS_CERT), key: readFileSync(env.TLS_KEY) }
     : null;
 
 // HTTP entry point, the server container in deploy/compose.yml.
 const server = serve(
   {
     fetch: app.fetch,
-    port: Number(process.env.PORT ?? 8080),
+    port: env.PORT,
     hostname: "::",
     ...(tls ? { createServer, serverOptions: tls } : {}),
   },

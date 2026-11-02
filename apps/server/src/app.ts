@@ -9,7 +9,7 @@ import { ZodError } from "zod";
 import AppError from "./shared/utils/error.js";
 import { requestLogger } from "./shared/middleware/logger.js";
 import { requireOrigin } from "./shared/middleware/origin.js";
-import { getOrigin, type Audience } from "./shared/utils/origins.js";
+import { origins, type Audience } from "./platform/config/env.js";
 
 import health from "./domains/health/health.routes.js";
 import admin from "./domains/admin/admin.routes.js";
@@ -19,7 +19,7 @@ import logs from "./domains/audit/audit.routes.js";
 // Every auth cookie reaches the API from all three (they're the same site), so without this a bug on the customer site
 // could read or act through an admin's session. Read at startup, so a misconfigured environment fails to boot.
 const audience = (name: Audience) =>
-  [cors({ origin: getOrigin(name), credentials: true }), requireOrigin([getOrigin(name)])] as const;
+  [cors({ origin: origins[name], credentials: true }), requireOrigin([origins[name]])] as const;
 
 const app = new Hono()
   .use("*", requestLogger())

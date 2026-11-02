@@ -1,14 +1,10 @@
-import "./env.js";
+import { env } from "../../platform/config/env.js";
 import { Redis, type RedisOptions } from "ioredis";
 
 // The cache may evict keys (allkeys-lru), the queue must never evict (noeviction). They're separate instances, locally
 // (infra/docker-compose.yml) and on the VPS (deploy/compose.yml).
-const cacheUrl = process.env.CACHE_URL;
-const queueUrl = process.env.QUEUE_URL;
-
-if (!cacheUrl || !queueUrl) {
-  throw new Error("CACHE_URL and QUEUE_URL must both be defined in the environment variables.");
-}
+const cacheUrl = env.CACHE_URL;
+const queueUrl = env.QUEUE_URL;
 
 // ioredis defaults to IPv4 only. family: 0 lets it resolve either, whatever the host's private network uses.
 const baseOptions: RedisOptions = { family: 0 };
