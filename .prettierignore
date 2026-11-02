@@ -9,3 +9,6 @@ pnpm-lock.yaml
 **/dist/
 **/.next/
 apps/server/prisma/migrations/
+
+# Written by the OpenAPI contract test (apps/server/test/http/http.test.ts).
+apps/server/openapi.json
