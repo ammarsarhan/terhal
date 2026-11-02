@@ -11,7 +11,7 @@ const main = async () => {
     if (!value) throw new Error("ADMIN_EMAIL isn't set. Set it to the first admin's email.");
 
     const result = emailSchema.safeParse(value);
-    if (!result.success) throw new Error(`ADMIN_EMAIL: ${result.error.issues[0].message}`);
+    if (!result.success) throw new Error(`ADMIN_EMAIL: ${result.error.issues[0]?.message ?? "invalid"}`);
 
     try {
         const { email, expiresAt } = await new AdminService().inviteFirstAdmin(result.data);

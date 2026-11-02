@@ -12,10 +12,11 @@ FROM base AS manifests
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
+COPY tooling tooling
 
 FROM manifests AS build
 RUN pnpm install --frozen-lockfile --filter @terhal/server... --filter terhal
-COPY tsconfig.base.json turbo.json ./
+COPY turbo.json ./
 COPY apps/server apps/server
 RUN pnpm turbo run build --filter=@terhal/server
 

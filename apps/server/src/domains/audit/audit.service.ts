@@ -90,6 +90,6 @@ export default class AuditService {
         });
 
         const logs = rows.slice(0, limit).map((log) => ({ ...log, action: log.action as AuditAction }));
-        return { logs, cursor: rows.length > limit ? logs[logs.length - 1].id : null };
+        return { logs, cursor: rows.length > limit ? (logs.at(-1)?.id ?? null) : null };
     }
 }

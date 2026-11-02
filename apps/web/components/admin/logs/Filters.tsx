@@ -177,7 +177,8 @@ function ActionList({ selected, onChange }: { selected: AuditAction[]; onChange:
 }
 
 function ActionFilter({ selected, onChange }: { selected: AuditAction[]; onChange: (selected: AuditAction[]) => void }) {
-    const value = selected.length === 0 ? "All" : selected.length === 1 ? actions[selected[0]].label : `${selected.length} selected`;
+    const [only] = selected;
+    const value = selected.length === 0 ? "All" : selected.length === 1 && only ? actions[only].label : `${selected.length} selected`;
 
     return (
         <Dropdown triggerClassName={triggerClass} trigger={<Trigger label="Action" value={value} />} panelClassName="w-80">
