@@ -69,7 +69,7 @@ export default function Logs() {
       const { q, actions, actor, date, sort, order } = filters;
       const hours = dates[date].hours;
 
-      const res = await api.admin.logs.$get({
+      const res = await api.v1.admin.logs.$get({
         query: {
           limit: String(pageSize),
           sort,

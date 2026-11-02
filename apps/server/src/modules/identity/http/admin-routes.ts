@@ -105,7 +105,8 @@ const accept = createRoute({
   path: "/admin/invitations/accept",
   tags,
   summary: "Create an admin account from an invitation",
-  description: "Needs a current code from the authenticator set up with /admin/invitations/totp.",
+  description:
+    "Needs a current code from the authenticator set up with /v1/admin/invitations/totp.",
   middleware: [
     rateLimit({ limit: 10, windowMs: 60 * MINUTE, key: ipKey("admin:invitation:accept") }),
   ] as const,
@@ -126,7 +127,7 @@ const signIn = createRoute({
   path: "/admin/auth/sign-in",
   tags,
   summary: "Check email and password",
-  description: "Sets a 5-minute challenge cookie. Always followed by /admin/auth/verify.",
+  description: "Sets a 5-minute challenge cookie. Always followed by /v1/admin/auth/verify.",
   middleware: [
     rateLimit({ limit: 10, windowMs: 15 * MINUTE, key: ipKey("admin:sign-in") }),
     rateLimit({

@@ -44,7 +44,7 @@ export default function AdminInvite({ searchParams }: PageProps<"/admin/invite">
   const token = single(use(searchParams).token);
 
   const invitation = useInvitation(token, (token) =>
-    api.admin.invitations.lookup.$get({ query: { token } }),
+    api.v1.admin.invitations.lookup.$get({ query: { token } }),
   );
 
   const [step, setStep] = useState<Step>("details");
@@ -82,7 +82,7 @@ export default function AdminInvite({ searchParams }: PageProps<"/admin/invite">
     setLoading(true);
 
     try {
-      const res = await api.admin.invitations.totp.$post({ json: { token } });
+      const res = await api.v1.admin.invitations.totp.$post({ json: { token } });
 
       if (res.ok) {
         setTotp(await res.json());
@@ -108,7 +108,7 @@ export default function AdminInvite({ searchParams }: PageProps<"/admin/invite">
     setLoading(true);
 
     try {
-      const res = await api.admin.invitations.accept.$post({
+      const res = await api.v1.admin.invitations.accept.$post({
         json: { token, firstName, lastName, password, code },
       });
       if (res.ok) return router.push("/");

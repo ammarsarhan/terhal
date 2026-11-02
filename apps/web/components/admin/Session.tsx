@@ -27,7 +27,7 @@ export function Session({ children }: { children: ReactNode }) {
   // Resolves to the next state, or null once a redirect to sign in has started.
   const check = useCallback(async (): Promise<State | null> => {
     try {
-      const res = await api.admin.auth.session.$get();
+      const res = await api.v1.admin.auth.session.$get();
       if (!res.ok) {
         router.replace("/sign-in");
         return null;
@@ -55,7 +55,7 @@ export function Session({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     // Leave even if the request failed, since signing out is what they asked for.
-    await api.admin.auth["sign-out"].$post().catch(() => null);
+    await api.v1.admin.auth["sign-out"].$post().catch(() => null);
     router.replace("/sign-in");
   }, [router]);
 

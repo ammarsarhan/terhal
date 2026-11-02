@@ -31,13 +31,15 @@ x-server: &server
 services:
   server:
     <<: *server
+    # Inside it, the server finishes in-flight requests (src/app.ts).
+    stop_grace_period: 30s
     healthcheck:
       test:
         [
           "CMD",
           "node",
           "-e",
-          "fetch('http://localhost:8080/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+          "fetch('http://localhost:8080/health/ready').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
         ]
       interval: 10s
       timeout: 5s

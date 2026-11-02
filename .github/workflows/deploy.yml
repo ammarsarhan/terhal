@@ -127,4 +127,4 @@ jobs:
       - name: Check the API
         run: |
           if [[ "$ENVIRONMENT" == main ]]; then api=https://api.terhal.co; else api="https://api.$ENVIRONMENT.terhal.co"; fi
-          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors "$api/health"
+          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors "$api/health/ready"

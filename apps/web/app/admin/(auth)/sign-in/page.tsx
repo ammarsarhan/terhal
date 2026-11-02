@@ -40,7 +40,7 @@ export default function AdminSignIn() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    api.admin.auth.session
+    api.v1.admin.auth.session
       .$get()
       .then((res) => (res.ok ? router.replace("/") : setChecking(false)))
       .catch(() => setChecking(false));
@@ -65,7 +65,7 @@ export default function AdminSignIn() {
     setLoading(true);
 
     try {
-      const res = await api.admin.auth["sign-in"].$post({ json: { email, password } });
+      const res = await api.v1.admin.auth["sign-in"].$post({ json: { email, password } });
 
       if (res.ok) {
         setCode("");
@@ -96,7 +96,7 @@ export default function AdminSignIn() {
     setLoading(true);
 
     try {
-      const res = await api.admin.auth.verify.$post({ json: { code } });
+      const res = await api.v1.admin.auth.verify.$post({ json: { code } });
       if (res.ok) return router.push("/");
 
       const error = await readError(res);

@@ -1,37 +1,40 @@
-// The Hono app itself, with no side effects (no listening, no port binding). src/server.ts runs it.
+import { readFileSync } from "node:fs";
+import { createServer } from "node:https";
+import { serve } from "@hono/node-server";
+import { router } from "./http/router.js";
+import { env } from "./platform/config/env.js";
+import { handleShutdown } from "./platform/lifecycle/shutdown.js";
+import { logger } from "./platform/logger/logger.js";
 
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { secureHeaders } from "hono/secure-headers";
+// Locally the API runs on https://api.local.terhal.co with an mkcert certificate, so its cookies behave exactly as in
+// production (same site as the frontends, Secure). On the VPS these are never set: the edge Caddy terminates TLS.
+const tls =
+  env.TLS_CERT && env.TLS_KEY
+    ? { cert: readFileSync(env.TLS_CERT), key: readFileSync(env.TLS_KEY) }
+    : null;
 
-import { notFound, onError } from "./http/errors.js";
-import { accessLog, bodyLimit, requestContext, requestId, timeout } from "./http/middleware.js";
-import { requireOrigin } from "./platform/http/origin.js";
-import { origins, type Audience } from "./platform/config/env.js";
+// The HTTP entry point, the server container in deploy/compose.yml.
+const server = serve(
+  {
+    fetch: router.fetch,
+    port: env.PORT,
+    hostname: "::",
+    ...(tls ? { createServer, serverOptions: tls } : {}),
+  },
+  (info) => {
+    logger.info({ port: info.port, tls: Boolean(tls) }, "http listening");
+  },
+);
 
-import health from "./domains/health/health.routes.js";
-import { auditRoutes } from "./modules/audit/index.js";
-import { adminAuthRoutes } from "./modules/identity/index.js";
-
-// The customer site, the staff dashboard and the admin panel are separate origins, and each may only call its own routes.
-// Every auth cookie reaches the API from all three (they're the same site), so without this a bug on the customer site
-// could read or act through an admin's session. Read at startup, so a misconfigured environment fails to boot.
-const audience = (name: Audience) =>
-  [cors({ origin: origins[name], credentials: true }), requireOrigin([origins[name]])] as const;
-
-const app = new Hono()
-  .use(requestId)
-  .use(requestContext)
-  .use(accessLog)
-  .use(timeout)
-  .use(bodyLimit)
-  .use("*", secureHeaders())
-  .use("/admin/*", ...audience("admin"))
-  .onError(onError)
-  .notFound(notFound)
-  .route("/health", health)
-  .route("/", adminAuthRoutes)
-  .route("/", auditRoutes);
-
-export type AppType = typeof app;
-export default app;
+// Stop accepting connections and wait for in-flight requests. close() also drops idle keep-alive connections, so it
+// resolves as soon as the last request finishes. 25 seconds, inside the container's 30-second stop_grace_period.
+handleShutdown(
+  () =>
+    new Promise<void>((resolve, reject) => {
+      server.close((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    }),
+  25_000,
+);

@@ -22,8 +22,8 @@ export const adminCookies = {
   accessCookie: "admin_access",
   refreshCookie: "admin_refresh",
   challengeCookie: "admin_challenge",
-  basePath: "/admin",
-  authPath: "/admin/auth",
+  basePath: "/v1/admin",
+  authPath: "/v1/admin/auth",
 } as const;
 
 export interface AdminSessionCookies {

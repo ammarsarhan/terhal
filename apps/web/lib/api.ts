@@ -29,12 +29,12 @@ export const readError = async (res: Response): Promise<ApiError> => {
 type Audience = "admin";
 
 const refreshPaths: Record<Audience, string> = {
-  admin: "/admin/auth/refresh",
+  admin: "/v1/admin/auth/refresh",
 };
 
 const audienceOf = (input: RequestInfo | URL): Audience | null => {
   const url = new URL(input instanceof Request ? input.url : input.toString(), endpoint);
-  return url.pathname.startsWith("/admin") ? "admin" : null;
+  return url.pathname.startsWith("/v1/admin") ? "admin" : null;
 };
 
 // Shared between concurrent requests, so a burst of expired requests only triggers one refresh per audience.
@@ -73,5 +73,5 @@ const appFetch: typeof fetch = async (input, init) => {
   return fetch(input, { ...init, credentials: "include" });
 };
 
-// Typed against the backend's routes, e.g. api.admin.auth["sign-in"].$post({ json: { email, password } }).
+// Typed against the backend's routes, e.g. api.v1.admin.auth["sign-in"].$post({ json: { email, password } }).
 export const api = hc<AppType>(endpoint, { fetch: appFetch });
