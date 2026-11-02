@@ -1,0 +1,15 @@
+**/node_modules
+**/.next
+**/dist
+**/generated
+**/.turbo
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.github
+.certs
+.neon
+.claude
+deploy
