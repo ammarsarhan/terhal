@@ -6,12 +6,10 @@ import { IconCloudOff } from "@tabler/icons-react";
 import { api } from "@/lib/api";
 import Button from "@/components/ui/Button";
 
-type SessionBody = Awaited<
-  ReturnType<Awaited<ReturnType<typeof api.admin.auth.session.$get>>["json"]>
->;
+import type { Admin } from "@terhal/contracts";
 
-// Whatever the backend's session route returns, so this stays in sync with it.
-export type Admin = Extract<SessionBody, { success: true }>["data"]["admin"];
+// The session route's response.
+export type { Admin };
 
 type SessionValue = {
   admin: Admin;
@@ -35,7 +33,7 @@ export function Session({ children }: { children: ReactNode }) {
         return null;
       }
 
-      return { status: "ready", admin: (await res.json()).data.admin };
+      return { status: "ready", admin: await res.json() };
     } catch {
       // A network blip isn't the same as being signed out, so offer a retry instead of sending them away.
       return { status: "unreachable" };

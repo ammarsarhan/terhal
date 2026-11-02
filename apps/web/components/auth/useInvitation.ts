@@ -35,7 +35,7 @@ export function useInvitation(
         return res.ok
           ? {
               status: "ready",
-              invitation: (body as { data: { invitation: Invitation } }).data.invitation,
+              invitation: body as Invitation,
             }
           : { status: "unusable", message: (body as Problem).detail };
       } catch {

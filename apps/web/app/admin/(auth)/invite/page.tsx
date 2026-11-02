@@ -85,7 +85,7 @@ export default function AdminInvite({ searchParams }: PageProps<"/admin/invite">
       const res = await api.admin.invitations.totp.$post({ json: { token } });
 
       if (res.ok) {
-        setTotp((await res.json()).data.totp);
+        setTotp(await res.json());
         return setStep("two-factor");
       }
 
