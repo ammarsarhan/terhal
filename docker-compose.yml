@@ -1,4 +1,4 @@
-# Local stand-ins for Neon Postgres and the two Render Key Value instances.
+# Local stand-ins for Neon Postgres and the VPS's two Redis containers.
 # Fixed, so the containers and volumes keep their names whatever the repo folder is called.
 name: terhal
 
