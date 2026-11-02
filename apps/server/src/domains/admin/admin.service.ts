@@ -1,4 +1,4 @@
-import { prisma } from "../../shared/utils/prisma.js";
+import { prisma } from "../../platform/db/prisma.js";
 import { origins } from "../../platform/config/env.js";
 import { generateToken, hashToken } from "../../shared/utils/token.js";
 import { decrypt, encrypt } from "../../shared/utils/encryption.js";

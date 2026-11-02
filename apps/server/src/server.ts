@@ -4,7 +4,7 @@ import { serve } from "@hono/node-server";
 
 import app from "./app.js";
 import { env } from "./platform/config/env.js";
-import { prisma } from "./shared/utils/prisma.js";
+import { prisma } from "./platform/db/prisma.js";
 import { cache } from "./shared/utils/redis.js";
 
 // Locally the API runs on https://api.local.terhal.co with an mkcert certificate, so its cookies behave exactly as

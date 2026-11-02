@@ -1,6 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import { JwtTokenExpired } from "hono/utils/jwt/types";
-import { prisma } from "../../shared/utils/prisma.js";
+import { prisma } from "../../platform/db/prisma.js";
 import TokenService from "../token/token.service.js";
 import { errorCodes, ForbiddenError, UnauthorizedError } from "../../shared/utils/error.js";
 import { AdminStatus } from "../../../generated/prisma/enums.js";

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 
-import { prisma } from "../../shared/utils/prisma.js";
+import { prisma } from "../../platform/db/prisma.js";
 import { cache } from "../../shared/utils/redis.js";
 import { ServiceUnavailableError } from "../../shared/utils/error.js";
 

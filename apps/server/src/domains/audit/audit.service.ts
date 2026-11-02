@@ -1,4 +1,4 @@
-import { prisma } from "../../shared/utils/prisma.js";
+import { prisma } from "../../platform/db/prisma.js";
 import type { Prisma } from "../../../generated/prisma/client.js";
 import type { ListLogsQuery } from "./audit.validators.js";
 

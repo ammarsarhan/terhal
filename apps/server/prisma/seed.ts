@@ -1,7 +1,7 @@
 // Invites the first admin by email. Run with `pnpm --filter @terhal/server db:seed`.
 // No names or passwords live in the environment: the admin gets a single-use link and sets up their own account.
 // Only works while no admin exists. Every admin after the first is invited by an admin.
-import { prisma } from "../src/shared/utils/prisma.js";
+import { prisma } from "../src/platform/db/prisma.js";
 import { ConflictError } from "../src/shared/utils/error.js";
 import { emailSchema } from "../src/domains/admin/admin.validators.js";
 import AdminService from "../src/domains/admin/admin.service.js";

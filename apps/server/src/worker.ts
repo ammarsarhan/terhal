@@ -1,7 +1,7 @@
 import { Worker } from "bullmq";
 
 import { processors } from "./jobs/processors.js";
-import { prisma } from "./shared/utils/prisma.js";
+import { prisma } from "./platform/db/prisma.js";
 import { cache, createQueueConnection } from "./shared/utils/redis.js";
 
 // Worker entry point, the worker container in deploy/compose.yml. No HTTP: it only pulls jobs off the queue Redis.
