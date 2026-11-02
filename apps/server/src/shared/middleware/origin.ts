@@ -1,5 +1,5 @@
 import { createMiddleware } from "hono/factory";
-import { errorCodes, ForbiddenError } from "../utils/error.js";
+import { AppError } from "../../platform/errors/app-error.js";
 
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -12,10 +12,11 @@ export const requireOrigin = (allowed: string[]) =>
     // Browsers always send Origin on these methods and pages can't change it. Requests without one aren't from a browser,
     // so they don't carry anyone else's cookies and are let through.
     if (unsafeMethods.has(c.req.method) && origin !== undefined && !allowed.includes(origin)) {
-      throw new ForbiddenError(
-        "Requests from this origin are not allowed.",
-        errorCodes.UNTRUSTED_ORIGIN,
-      );
+      throw new AppError({
+        code: "UNTRUSTED_ORIGIN",
+        status: 403,
+        detail: "Requests from this origin are not allowed.",
+      });
     }
 
     await next();

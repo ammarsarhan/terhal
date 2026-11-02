@@ -5,5 +5,5 @@ import type { AppType } from "./app.js";
 // Hono comes from the workspace catalog, so every package resolves the same copy and the routes type check.
 export type { AppType };
 export type Client = ReturnType<typeof hc<AppType>>;
-export type { ErrorCode } from "./shared/utils/error.js";
+export type { ErrorCode } from "@terhal/contracts";
 export type { AuditAction } from "./domains/audit/audit.service.js";

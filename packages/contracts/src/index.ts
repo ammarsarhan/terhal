@@ -1,0 +1,4 @@
+// Request and response schemas shared by the API and the web app. Framework-free (plain zod with .meta()), so the web
+// app can use them without Hono. Exported as TypeScript: the server bundles it (tsup) and Next transpiles it.
+export * from "./errors";
+export * from "./problem";

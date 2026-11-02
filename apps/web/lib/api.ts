@@ -1,15 +1,27 @@
 import { hc } from "hono/client";
-import type { AppType, ErrorCode } from "@terhal/server/client";
+import type { ErrorCode, Problem, ValidationProblem } from "@terhal/contracts";
+import type { AppType } from "@terhal/server/client";
 
 const endpoint = process.env.NEXT_PUBLIC_API_URL ?? "https://api.local.terhal.co:8080";
 
-// The shape the backend's error handler sends back for every failed request.
+// A failed request, as the forms use it. The API answers every error with RFC 9457 problem details
+// (@terhal/contracts Problem); validation failures list each field's problem in `errors`.
 export type ApiError = {
-  success: false;
-  error: {
-    code?: ErrorCode;
-    message: string;
-    fields?: { field: string; message: string }[];
+  code?: ErrorCode;
+  message: string;
+  fields: { field: string; message: string }[];
+};
+
+// Not every failure is the API's JSON (e.g. a proxy's plain text 502), so this never assumes it is.
+export const readError = async (res: Response): Promise<ApiError> => {
+  const body = (await res.json().catch(() => null)) as Partial<Problem> | null;
+  if (!body?.detail) return { message: `The server responded with ${res.status}.`, fields: [] };
+
+  const issues = body.code === "VALIDATION_FAILED" ? (body as ValidationProblem).errors : [];
+  return {
+    code: body.code,
+    message: body.detail,
+    fields: issues.map((issue) => ({ field: issue.path, message: issue.message })),
   };
 };
 
@@ -51,11 +63,11 @@ const appFetch: typeof fetch = async (input, init) => {
   const audience = audienceOf(input);
   if (!audience) return response;
 
-  const body: Partial<ApiError> | null = await response
+  const body: Partial<Problem> | null = await response
     .clone()
     .json()
     .catch(() => null);
-  if (body?.error?.code !== "ACCESS_TOKEN_EXPIRED") return response;
+  if (body?.code !== "ACCESS_TOKEN_EXPIRED") return response;
   if (!(await refresh(audience))) return response;
 
   return fetch(input, { ...init, credentials: "include" });

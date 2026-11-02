@@ -9,7 +9,7 @@ import {
   adminSignInSchema,
   adminVerifySchema,
 } from "./admin.validators.js";
-import { ForbiddenError, UnauthorizedError } from "../../shared/utils/error.js";
+import { AppError } from "../../platform/errors/app-error.js";
 import validate from "../../shared/middleware/validate.js";
 import {
   bodyKey,
@@ -131,7 +131,7 @@ export const adminRefreshHandler = factory.createHandlers(
       return c.json({ success: true, data: { admin } }, 200);
     } catch (error) {
       // Clear the cookies when the session is over, so the browser stops sending them.
-      if (error instanceof UnauthorizedError || error instanceof ForbiddenError) {
+      if (error instanceof AppError && (error.status === 401 || error.status === 403)) {
         TokenService.clearAuthenticationCookies(c, "admin");
       }
 

@@ -24,6 +24,7 @@
     "@hono/zod-validator": "^0.9.1",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "@terhal/contracts": "workspace:^",
     "argon2": "^0.45.1",
     "bullmq": "^6.3.14",
     "dotenv": "^17.4.2",

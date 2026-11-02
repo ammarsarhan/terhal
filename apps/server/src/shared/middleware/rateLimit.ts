@@ -3,7 +3,7 @@ import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { getConnInfo } from "@hono/node-server/conninfo";
 import { cache } from "../../platform/redis/connections.js";
-import { errorCodes, ServiceUnavailableError, TooManyRequestsError } from "../utils/error.js";
+import { AppError } from "../../platform/errors/app-error.js";
 
 // What a limit is counted against.
 export type RateLimitSubject = "ip" | "identifier" | "user";
@@ -88,19 +88,22 @@ export const rateLimit = ({ limit, windowMs, key }: RateLimitOptions) =>
       // Fails closed: these limits guard sign in, so an unreachable Redis must not mean unlimited attempts.
       const { count, ttl } = await consume(rateLimitKey, windowMs).catch((error) => {
         console.error("Rate limiter unavailable:", error);
-        throw new ServiceUnavailableError(
-          "This service is temporarily unavailable. Please try again shortly.",
-        );
+        throw new AppError({
+          code: "SERVICE_UNAVAILABLE",
+          status: 503,
+          detail: "This service is temporarily unavailable. Please try again shortly.",
+        });
       });
 
       if (count > limit) {
         const retryAfter = Math.max(1, Math.ceil(ttl / 1000));
 
         c.header("Retry-After", String(retryAfter));
-        throw new TooManyRequestsError(
-          `Too many requests. Please try again in ${formatWait(retryAfter)}.`,
-          errorCodes.RATE_LIMITED,
-        );
+        throw new AppError({
+          code: "RATE_LIMITED",
+          status: 429,
+          detail: `Too many requests. Please try again in ${formatWait(retryAfter)}.`,
+        });
       }
     }
 

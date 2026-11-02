@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, type Variants } from "motion/react";
-import { api, type ApiError } from "@/lib/api";
+import { api, readError, type ApiError } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Password from "@/components/ui/Password";
@@ -72,8 +72,8 @@ export default function AdminSignIn() {
         return setStep("code");
       }
 
-      const { error } = (await res.json()) as unknown as ApiError;
-      const field = (name: string) => error.fields?.find((f) => f.field === name)?.message;
+      const error = await readError(res);
+      const field = (name: string) => error.fields.find((f) => f.field === name)?.message;
 
       setErrors(
         field("email") || field("password")
@@ -99,7 +99,7 @@ export default function AdminSignIn() {
       const res = await api.admin.auth.verify.$post({ json: { code } });
       if (res.ok) return router.push("/");
 
-      const { error } = (await res.json()) as unknown as ApiError;
+      const error = await readError(res);
 
       // The 5-minute window ran out, so the password has to be entered again.
       if (error.code === "TOTP_CHALLENGE_INVALID") {

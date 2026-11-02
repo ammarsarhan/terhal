@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { IconHistory, IconSearch } from "@tabler/icons-react";
-import { api, type ApiError } from "@/lib/api";
+import { api, readError } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Header from "@/components/admin/Header";
 import { adminPath } from "@/components/admin/Navigation";
@@ -84,9 +84,7 @@ export default function Logs() {
       });
 
       if (!res.ok) {
-        // Not every failure is the API's JSON error (e.g. a proxy's plain text 502), so don't assume it is.
-        const body = (await res.json().catch(() => null)) as ApiError | null;
-        throw new Error(body?.error?.message ?? `The server responded with ${res.status}.`);
+        throw new Error((await readError(res)).message);
       }
 
       return (await res.json()).data;

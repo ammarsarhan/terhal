@@ -4,14 +4,7 @@ import { generateToken, hashToken } from "../../platform/crypto/tokens.js";
 import { decrypt, encrypt } from "../../platform/crypto/encryption.js";
 import { createTotpSecret, getTotpUri, verifyTotp } from "../../platform/crypto/totp.js";
 import { compare, compareAgainstNothing, hash } from "../../platform/crypto/passwords.js";
-import {
-  BadRequestError,
-  ConflictError,
-  errorCodes,
-  ForbiddenError,
-  ServiceUnavailableError,
-  UnauthorizedError,
-} from "../../shared/utils/error.js";
+import { AppError } from "../../platform/errors/app-error.js";
 import MessagingService from "../messaging/messaging.service.js";
 import TokenService from "../token/token.service.js";
 import AuditService, { auditActions } from "../audit/audit.service.js";
@@ -48,10 +41,11 @@ export default class AdminService {
 
     const invitation = await prisma.$transaction(async (tx) => {
       if ((await tx.admin.count()) > 0)
-        throw new ConflictError(
-          "An admin already exists. Further admins must be invited by an admin.",
-          errorCodes.ACCOUNT_ALREADY_EXISTS,
-        );
+        throw new AppError({
+          code: "ACCOUNT_ALREADY_EXISTS",
+          status: 409,
+          detail: "An admin already exists. Further admins must be invited by an admin.",
+        });
 
       // With no admins yet, every pending invitation came from an earlier seed.
       const pending = await tx.adminInvitation.findMany({
@@ -110,7 +104,11 @@ export default class AdminService {
       });
 
       console.error("Failed to send admin invitation:", error);
-      throw new ServiceUnavailableError("We couldn't send the invitation email. Please try again.");
+      throw new AppError({
+        code: "SERVICE_UNAVAILABLE",
+        status: 503,
+        detail: "We couldn't send the invitation email. Please try again.",
+      });
     }
 
     await AuditService.record({
@@ -132,17 +130,19 @@ export default class AdminService {
     });
 
     if (!invitation || invitation.acceptedAt || invitation.revokedAt) {
-      throw new BadRequestError(
-        "This invitation link is invalid or has already been used.",
-        errorCodes.INVITATION_INVALID,
-      );
+      throw new AppError({
+        code: "INVITATION_INVALID",
+        status: 400,
+        detail: "This invitation link is invalid or has already been used.",
+      });
     }
 
     if (invitation.expiresAt <= new Date()) {
-      throw new BadRequestError(
-        "This invitation has expired. Ask for a new one.",
-        errorCodes.INVITATION_EXPIRED,
-      );
+      throw new AppError({
+        code: "INVITATION_EXPIRED",
+        status: 400,
+        detail: "This invitation has expired. Ask for a new one.",
+      });
     }
 
     return invitation;
@@ -193,10 +193,11 @@ export default class AdminService {
       select: { totpSecret: true },
     });
     if (!stored.totpSecret)
-      throw new BadRequestError(
-        "This invitation link is invalid or has already been used.",
-        errorCodes.INVITATION_INVALID,
-      );
+      throw new AppError({
+        code: "INVITATION_INVALID",
+        status: 400,
+        detail: "This invitation link is invalid or has already been used.",
+      });
 
     const current = decrypt(stored.totpSecret);
     return { uri: getTotpUri(current, invitation.email), secret: current };
@@ -211,10 +212,11 @@ export default class AdminService {
     const invitation = await this.findUsableInvitation(token);
 
     if (!invitation.totpSecret)
-      throw new BadRequestError(
-        "Set up two-factor authentication before creating your account.",
-        errorCodes.TOTP_SETUP_REQUIRED,
-      );
+      throw new AppError({
+        code: "TOTP_SETUP_REQUIRED",
+        status: 400,
+        detail: "Set up two-factor authentication before creating your account.",
+      });
 
     const step = verifyTotp(decrypt(invitation.totpSecret), code, null);
 
@@ -227,10 +229,11 @@ export default class AdminService {
         after: { reason: "wrong_code" },
         ipAddress,
       });
-      throw new BadRequestError(
-        "That code didn't work. Check your authenticator app and try again.",
-        errorCodes.TOTP_CODE_INVALID,
-      );
+      throw new AppError({
+        code: "TOTP_CODE_INVALID",
+        status: 400,
+        detail: "That code didn't work. Check your authenticator app and try again.",
+      });
     }
 
     const existing = await prisma.admin.findUnique({
@@ -238,10 +241,11 @@ export default class AdminService {
       select: { id: true },
     });
     if (existing)
-      throw new ConflictError(
-        "An admin account with this email already exists.",
-        errorCodes.ACCOUNT_ALREADY_EXISTS,
-      );
+      throw new AppError({
+        code: "ACCOUNT_ALREADY_EXISTS",
+        status: 409,
+        detail: "An admin account with this email already exists.",
+      });
 
     const passwordHash = await hash(password);
     const now = new Date();
@@ -260,10 +264,11 @@ export default class AdminService {
       });
 
       if (count === 0)
-        throw new BadRequestError(
-          "This invitation link is invalid or has already been used.",
-          errorCodes.INVITATION_INVALID,
-        );
+        throw new AppError({
+          code: "INVITATION_INVALID",
+          status: 400,
+          detail: "This invitation link is invalid or has already been used.",
+        });
 
       const created = await tx.admin.create({
         data: {
@@ -398,10 +403,11 @@ export default class AdminService {
         entityId: email,
         ipAddress,
       });
-      throw new UnauthorizedError(
-        "The email or password is incorrect.",
-        errorCodes.INVALID_CREDENTIALS,
-      );
+      throw new AppError({
+        code: "INVALID_CREDENTIALS",
+        status: 401,
+        detail: "The email or password is incorrect.",
+      });
     }
 
     if (!(await compare(password, admin.passwordHash))) {
@@ -412,10 +418,11 @@ export default class AdminService {
         entityId: admin.id,
         ipAddress,
       });
-      throw new UnauthorizedError(
-        "The email or password is incorrect.",
-        errorCodes.INVALID_CREDENTIALS,
-      );
+      throw new AppError({
+        code: "INVALID_CREDENTIALS",
+        status: 401,
+        detail: "The email or password is incorrect.",
+      });
     }
 
     // Checked after the password, so only someone who knows it learns the account is inactive.
@@ -428,14 +435,19 @@ export default class AdminService {
         after: { reason: "account_inactive" },
         ipAddress,
       });
-      throw new ForbiddenError("This admin account is not active.", errorCodes.ACCOUNT_NOT_ACTIVE);
+      throw new AppError({
+        code: "ACCOUNT_NOT_ACTIVE",
+        status: 403,
+        detail: "This admin account is not active.",
+      });
     }
 
     if (!admin.totpSecret)
-      throw new ForbiddenError(
-        "Two-factor authentication isn't set up for this account.",
-        errorCodes.TOTP_SETUP_REQUIRED,
-      );
+      throw new AppError({
+        code: "TOTP_SETUP_REQUIRED",
+        status: 403,
+        detail: "Two-factor authentication isn't set up for this account.",
+      });
 
     // A correct password with no code after it can mean the password leaked, so the half-finished sign in is recorded too.
     await AuditService.record({
@@ -452,18 +464,20 @@ export default class AdminService {
   // The second half of signing in: checks the two-factor code for the admin who passed the password check.
   verifySignIn = async (adminId: string | null, code: string, ipAddress: string | null) => {
     if (!adminId)
-      throw new UnauthorizedError(
-        "Your sign in has expired. Please enter your email and password again.",
-        errorCodes.TOTP_CHALLENGE_INVALID,
-      );
+      throw new AppError({
+        code: "TOTP_CHALLENGE_INVALID",
+        status: 401,
+        detail: "Your sign in has expired. Please enter your email and password again.",
+      });
 
     const admin = await prisma.admin.findUnique({ where: { id: adminId } });
 
     if (!admin?.totpSecret)
-      throw new UnauthorizedError(
-        "Your sign in has expired. Please enter your email and password again.",
-        errorCodes.TOTP_CHALLENGE_INVALID,
-      );
+      throw new AppError({
+        code: "TOTP_CHALLENGE_INVALID",
+        status: 401,
+        detail: "Your sign in has expired. Please enter your email and password again.",
+      });
     if (admin.status !== AdminStatus.ACTIVE) {
       await AuditService.record({
         adminId: admin.id,
@@ -473,7 +487,11 @@ export default class AdminService {
         after: { reason: "account_inactive" },
         ipAddress,
       });
-      throw new ForbiddenError("This admin account is not active.", errorCodes.ACCOUNT_NOT_ACTIVE);
+      throw new AppError({
+        code: "ACCOUNT_NOT_ACTIVE",
+        status: 403,
+        detail: "This admin account is not active.",
+      });
     }
 
     // A wrong code after a correct password is worth recording: it can mean someone has the password but not the phone.
@@ -486,10 +504,11 @@ export default class AdminService {
         after: { reason },
         ipAddress,
       });
-      return new BadRequestError(
-        "That code didn't work. Check your authenticator app and try again.",
-        errorCodes.TOTP_CODE_INVALID,
-      );
+      return new AppError({
+        code: "TOTP_CODE_INVALID",
+        status: 400,
+        detail: "That code didn't work. Check your authenticator app and try again.",
+      });
     };
 
     const secret = decrypt(admin.totpSecret);
@@ -516,10 +535,11 @@ export default class AdminService {
     userAgent: string | null,
   ) => {
     if (!refreshToken)
-      throw new UnauthorizedError(
-        "Your session is invalid or has expired. Please sign in again.",
-        errorCodes.INVALID_REFRESH_TOKEN,
-      );
+      throw new AppError({
+        code: "INVALID_REFRESH_TOKEN",
+        status: 401,
+        detail: "Your session is invalid or has expired. Please sign in again.",
+      });
 
     // Sessions only store the hash of the refresh token, so look it up the same way.
     const currentHash = TokenService.hashRefreshToken(refreshToken);
@@ -529,19 +549,21 @@ export default class AdminService {
     });
 
     if (!session)
-      throw new UnauthorizedError(
-        "Your session is invalid or has expired. Please sign in again.",
-        errorCodes.INVALID_REFRESH_TOKEN,
-      );
+      throw new AppError({
+        code: "INVALID_REFRESH_TOKEN",
+        status: 401,
+        detail: "Your session is invalid or has expired. Please sign in again.",
+      });
 
     const absoluteExpiresAt = new Date(session.createdAt.getTime() + this.sessionAbsoluteLifetime);
     const now = new Date();
 
     if (session.revokedAt || session.expiresAt <= now || absoluteExpiresAt <= now) {
-      throw new UnauthorizedError(
-        "Your session is invalid or has expired. Please sign in again.",
-        errorCodes.INVALID_REFRESH_TOKEN,
-      );
+      throw new AppError({
+        code: "INVALID_REFRESH_TOKEN",
+        status: 401,
+        detail: "Your session is invalid or has expired. Please sign in again.",
+      });
     }
 
     // Check the admin again, since they may have been deactivated since signing in.
@@ -561,7 +583,11 @@ export default class AdminService {
         );
       });
 
-      throw new ForbiddenError("This admin account is not active.", errorCodes.ACCOUNT_NOT_ACTIVE);
+      throw new AppError({
+        code: "ACCOUNT_NOT_ACTIVE",
+        status: 403,
+        detail: "This admin account is not active.",
+      });
     }
 
     const {
@@ -581,10 +607,11 @@ export default class AdminService {
     });
 
     if (count === 0)
-      throw new UnauthorizedError(
-        "Your session is invalid or has expired. Please sign in again.",
-        errorCodes.INVALID_REFRESH_TOKEN,
-      );
+      throw new AppError({
+        code: "INVALID_REFRESH_TOKEN",
+        status: 401,
+        detail: "Your session is invalid or has expired. Please sign in again.",
+      });
 
     return {
       admin: createAdminResponse(session.admin),

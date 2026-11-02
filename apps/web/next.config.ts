@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   // A self-contained server for the Docker image (see web/Dockerfile). Traced from the repo root, since the app pulls in
   // workspace packages.
   output: "standalone",
+  // Shipped as TypeScript (packages/contracts).
+  transpilePackages: ["@terhal/contracts"],
   outputFileTracingRoot: path.join(__dirname, "../.."),
   // Local development runs on https://local.terhal.co, https://dashboard.local.terhal.co and https://admin.local.terhal.co
   // (see the README), and Next only serves its dev assets to localhost unless told otherwise.

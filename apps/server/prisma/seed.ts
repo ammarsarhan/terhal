@@ -2,7 +2,7 @@
 // No names or passwords live in the environment: the admin gets a single-use link and sets up their own account.
 // Only works while no admin exists. Every admin after the first is invited by an admin.
 import { prisma } from "../src/platform/db/prisma.js";
-import { ConflictError } from "../src/shared/utils/error.js";
+import { AppError } from "../src/platform/errors/app-error.js";
 import { emailSchema } from "../src/domains/admin/admin.validators.js";
 import AdminService from "../src/domains/admin/admin.service.js";
 
@@ -19,7 +19,8 @@ const main = async () => {
     console.log(`Invitation sent to ${email}, valid until ${expiresAt.toUTCString()}.`);
   } catch (error) {
     // Not a failure: the platform is already set up.
-    if (error instanceof ConflictError) return console.log(`${error.message} Skipping.`);
+    if (error instanceof AppError && error.code === "ACCOUNT_ALREADY_EXISTS")
+      return console.log(`${error.message} Skipping.`);
     throw error;
   }
 };

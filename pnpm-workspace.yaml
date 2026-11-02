@@ -1,5 +1,6 @@
 packages:
   - apps/*
+  - packages/*
   - tooling/*
 
 # Shared versions for anything that crosses the server/web boundary. Hono in particular must be the same

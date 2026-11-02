@@ -2,7 +2,7 @@ import { Hono } from "hono";
 
 import { prisma } from "../../platform/db/prisma.js";
 import { cache } from "../../platform/redis/connections.js";
-import { ServiceUnavailableError } from "../../shared/utils/error.js";
+import { AppError } from "../../platform/errors/app-error.js";
 
 const health = new Hono()
   .get("/", async (c) => {
@@ -19,13 +19,21 @@ const health = new Hono()
       // Checks whether or not the database is up and running.
       await prisma.$queryRaw`SELECT 1`;
     } catch {
-      throw new ServiceUnavailableError("Could not connect to the database.");
+      throw new AppError({
+        code: "SERVICE_UNAVAILABLE",
+        status: 503,
+        detail: "Could not connect to the database.",
+      });
     }
 
     try {
       await cache.ping();
     } catch {
-      throw new ServiceUnavailableError("Could not connect to the cache.");
+      throw new AppError({
+        code: "SERVICE_UNAVAILABLE",
+        status: 503,
+        detail: "Could not connect to the cache.",
+      });
     }
 
     return c.json({

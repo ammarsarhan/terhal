@@ -30,14 +30,12 @@ export function Session({ children }: { children: ReactNode }) {
   const check = useCallback(async (): Promise<State | null> => {
     try {
       const res = await api.admin.auth.session.$get();
-      const body = await res.json();
-
-      if (!body.success) {
+      if (!res.ok) {
         router.replace("/sign-in");
         return null;
       }
 
-      return { status: "ready", admin: body.data.admin };
+      return { status: "ready", admin: (await res.json()).data.admin };
     } catch {
       // A network blip isn't the same as being signed out, so offer a retry instead of sending them away.
       return { status: "unreachable" };

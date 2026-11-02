@@ -4,7 +4,7 @@ import { use, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
-import { api, type ApiError } from "@/lib/api";
+import { api, readError, type ApiError } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Password from "@/components/ui/Password";
@@ -58,7 +58,7 @@ export default function AdminInvite({ searchParams }: PageProps<"/admin/invite">
   const [loading, setLoading] = useState(false);
 
   // Errors about the invitation itself replace the whole page, since nothing on it can fix them.
-  const isInvitationError = (error: ApiError["error"]) => {
+  const isInvitationError = (error: ApiError) => {
     if (error.code !== "INVITATION_INVALID" && error.code !== "INVITATION_EXPIRED") return false;
     setUnusable(error.message);
     return true;
@@ -89,7 +89,7 @@ export default function AdminInvite({ searchParams }: PageProps<"/admin/invite">
         return setStep("two-factor");
       }
 
-      const { error } = (await res.json()) as unknown as ApiError;
+      const error = await readError(res);
       if (!isInvitationError(error)) setErrors({ form: error.message });
     } catch {
       setErrors({ form: networkError });
@@ -113,12 +113,12 @@ export default function AdminInvite({ searchParams }: PageProps<"/admin/invite">
       });
       if (res.ok) return router.push("/");
 
-      const { error } = (await res.json()) as unknown as ApiError;
+      const error = await readError(res);
       if (isInvitationError(error)) return;
 
       // A field can fail several rules at once, so keep the first message for each.
       const fields: Errors = {};
-      for (const f of error.fields ?? []) fields[f.field as Field] ??= f.message;
+      for (const f of error.fields) fields[f.field as Field] ??= f.message;
       if (error.code === "TOTP_CODE_INVALID") fields.code = error.message;
 
       // Name or password problems can only be fixed on the first step.

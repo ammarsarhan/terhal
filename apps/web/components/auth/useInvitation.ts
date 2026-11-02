@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ApiError } from "@/lib/api";
+import type { Problem } from "@terhal/contracts";
 
 export type Invitation = { email: string; expiresAt: string };
 
@@ -37,7 +37,7 @@ export function useInvitation(
               status: "ready",
               invitation: (body as { data: { invitation: Invitation } }).data.invitation,
             }
-          : { status: "unusable", message: (body as ApiError).error.message };
+          : { status: "unusable", message: (body as Problem).detail };
       } catch {
         return {
           status: "unusable",

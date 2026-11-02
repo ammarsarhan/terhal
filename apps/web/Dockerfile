@@ -14,10 +14,12 @@ RUN test -n "$NEXT_PUBLIC_API_URL" || (echo "NEXT_PUBLIC_API_URL build arg is re
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
+COPY packages/contracts/package.json packages/contracts/
 COPY tooling tooling
 # The web app type checks against the server's routes, so it needs the server's dependencies too.
 RUN pnpm install --frozen-lockfile --filter @terhal/web... --filter terhal
 COPY turbo.json ./
+COPY packages packages
 COPY apps/server apps/server
 COPY apps/web apps/web
 RUN pnpm turbo run build --filter=@terhal/web
