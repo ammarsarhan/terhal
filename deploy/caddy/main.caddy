@@ -1,0 +1,11 @@
+terhal.co, dashboard.terhal.co, admin.terhal.co {
+	import web main-web
+}
+
+www.terhal.co {
+	redir https://terhal.co{uri} permanent
+}
+
+api.terhal.co {
+	import api main-server
+}

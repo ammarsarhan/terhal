@@ -1,0 +1,9 @@
+staging.terhal.co, dashboard.staging.terhal.co, admin.staging.terhal.co {
+	# Keeps staging out of search results.
+	header X-Robots-Tag "noindex, nofollow"
+	import web staging-web
+}
+
+api.staging.terhal.co {
+	import api staging-server
+}
