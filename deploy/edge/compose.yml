@@ -1,0 +1,37 @@
+# The one public entry point on the VPS, in /opt/terhal/edge: Caddy on :80 and :443, with automatic Let's Encrypt
+# certificates for every host. Shared by staging and main. Each environment's deploy drops its own site file into
+# sites/ and reloads Caddy, so one environment's deploy never rewrites the other's routes.
+
+name: terhal-edge
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in /opt/terhal/edge/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./sites:/etc/caddy/sites:ro
+      # Certificates and ACME accounts. Losing this means re-issuing every certificate, which Let's Encrypt rate limits.
+      - data:/data
+      - config:/config
+    networks:
+      - edge
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+networks:
+  edge:
+    external: true
+
+volumes:
+  data:
+  config:

@@ -31,12 +31,12 @@
     "ioredis": "^6.0.0",
     "otpauth": "^9.5.2",
     "pg": "^8.23.0",
+    "prisma": "^7.10.0",
     "resend": "^6.30.0",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "prisma": "^7.10.0",
     "tsx": "^4.23.0",
     "typescript": "^7.0.2"
   }

@@ -21,12 +21,13 @@ export const createRateLimitKey = (scope: string, subject: RateLimitSubject, val
     return `${scope}:${subject}:${hashed}`;
 }
 
-// Render's edge is Cloudflare, which overwrites CF-Connecting-IP with the caller's address, so a client can't choose its
-// own. X-Forwarded-For and X-Real-IP aren't safe here: Render passes on whatever the client sent. Without the header
-// (e.g. locally), fall back to the socket's address. On Render that's the proxy, so every caller would share one limit:
-// stricter, never looser. Checked on every new environment with a spoofed header (see the README).
+// On the VPS the API is only reachable through the edge Caddy, which overwrites X-Real-IP with the address that actually
+// connected (deploy/edge/Caddyfile), so a client can't choose its own. X-Forwarded-For isn't used: its leftmost entries
+// are whatever the client sent. Without the header (e.g. locally), fall back to the socket's address. Behind a proxy
+// that's the proxy, so every caller would share one limit: stricter, never looser. Checked on every new environment with
+// a spoofed header (see the README).
 export const getClientIp = (c: Context) => {
-    const real = c.req.header("cf-connecting-ip")?.trim();
+    const real = c.req.header("x-real-ip")?.trim();
     if (real) return real;
 
     try {

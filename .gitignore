@@ -151,7 +151,6 @@ generated/
 # Turbo
 .turbo
 .neon
-.vercel
 .env*
 !.env.example
 

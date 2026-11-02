@@ -3,9 +3,13 @@
 pnpm workspace + Turborepo.
 
 ```
-backend/   Hono API + BullMQ worker + Prisma (Render, Neon Postgres)
-web/       Next.js: the customer site, the staff dashboard and the admin panel, one host each (Vercel)
+backend/   Hono API + BullMQ worker + Prisma (Neon Postgres)
+web/       Next.js: the customer site, the staff dashboard and the admin panel, one host each
+deploy/    Docker Compose stacks, Caddy and scripts for the VPS
 ```
+
+Everything except the database runs in Docker on one VPS, behind Caddy. The database is Neon (`main` and `staging`
+branches).
 
 ## Hosts
 
@@ -95,24 +99,63 @@ Set `ADMIN_EMAIL` in `backend/.env` and run `pnpm --filter @terhal/backend db:se
 invitation email, link included, is printed to the console. The seed only works while no admin exists; every admin after
 the first is invited by an admin.
 
-## Render services
+## The VPS
 
-`render.yaml` describes the backend in one Render project, in Frankfurt next to Neon's AWS Frankfurt region. For now only
-the staging environment exists, on free instances:
+One Ubuntu 24.04 box, ideally in Frankfurt next to Neon's AWS Frankfurt region, runs both environments:
 
-| Service          | Type                | Notes                                                                                   |
-| ---------------- | ------------------- | --------------------------------------------------------------------------------------- |
-| `server-staging` | Web service (free)  | Builds from the repo root so pnpm can see the lockfile. Runs `db:deploy` before starting. |
-| `queue-staging`  | Key Value (free)    | `noeviction`. Serves as both `QUEUE_URL` and `CACHE_URL` until the cache gets its own. |
+```
+/opt/terhal/edge      Caddy on :80/:443, the only thing that publishes a port. TLS for every host, routes from sites/
+/opt/terhal/staging   server, worker, web, cache Redis, queue Redis (deploy/compose.yml), secrets in app.env
+/opt/terhal/main      the same, for production
+```
 
-Free web services sleep after 15 minutes without traffic and have no shell, so seed from your machine against the Neon
-branch. The `main` environment is added when Terhal launches. The worker (no free plan) is added with the first real job,
-along with a paid, persisted queue. Only the server runs migrations, so the two never race on deploy. `DATABASE_URL` is
-the Neon branch's pooled URL and `DATABASE_URL_UNPOOLED` its direct URL, used only for migrations.
+Caddy reaches each environment's server and web app over the shared `edge` Docker network (as `staging-server`,
+`main-web` and so on). Each environment keeps its own Redis containers; the cache may evict (`allkeys-lru`), the queue
+never does (`noeviction`, AOF on a volume). `DATABASE_URL` is the Neon branch's pooled URL and `DATABASE_URL_UNPOOLED`
+its direct URL, used only for migrations.
 
-**Client IPs.** Rate limits read the caller's address from `CF-Connecting-IP`, which Render's Cloudflare edge sets and
-clients can't override. In every new environment, check that a spoofed header is ignored: send the same failing sign in
-with a different `CF-Connecting-IP` each time and make sure the limit still kicks in.
+### Deploys
+
+`.github/workflows/deploy.yml` runs after CI passes on a push to `staging` or `main`:
+
+1. Builds the backend image (server, worker and migrations) and the web image for that environment (the API's URL is baked
+   in at build time), and pushes both to `ghcr.io/ammarsarhan`, tagged with the commit.
+2. Over SSH as `deploy`, copies `deploy/compose.yml` and `deploy/caddy/<env>.caddy` to the VPS and runs `deploy/deploy.sh`:
+   pull, migrate, `docker compose up --wait` until every container is healthy, then reload Caddy with the routes.
+3. Checks `/health` from outside, through DNS and TLS.
+
+If a step fails, whatever was running keeps serving. To redeploy a commit, re-run its Deploy run in the Actions tab. To roll
+back by hand: `cd /opt/terhal/<env> && cp .env.previous .env && docker compose up -d --wait` (migrations aren't undone).
+From `/opt/terhal/<env>`, plain `docker compose ps`, `logs -f server` and `restart` work.
+
+### Setting up a VPS
+
+1. **Create a deploy key** (on your machine): `ssh-keygen -t ed25519 -N "" -C terhal-deploy -f terhal-deploy`.
+2. **Bootstrap the box** (Docker, firewall, `deploy` user, automatic security updates, swap):
+   `ssh root@<vps> 'bash -s' -- "$(cat terhal-deploy.pub)" < deploy/bootstrap.sh`
+3. **Point DNS at it.** A records (and AAAA, if the box has IPv6) to the VPS for `terhal.co`, `www`, `dashboard`, `admin`,
+   `api`, `staging`, `dashboard.staging`, `admin.staging` and `api.staging`. Only add production's once it launches.
+4. **Start the edge:**
+   ```sh
+   scp deploy/edge/compose.yml deploy/edge/Caddyfile deploy@<vps>:/opt/terhal/edge/
+   ssh deploy@<vps> 'cd /opt/terhal/edge && echo "ACME_EMAIL=<your email>" > .env && docker compose up -d'
+   ```
+   Changes to `deploy/edge/` are copied by hand the same way, followed by
+   `docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile`.
+5. **Write each environment's secrets:** copy `deploy/app.env.example` to `/opt/terhal/<env>/app.env` and fill it in
+   (`chmod 600`).
+6. **Add the GitHub environment** (Settings → Environments, named `staging` or `main`) with the secrets `VPS_HOST`,
+   `VPS_SSH_KEY` (the contents of `terhal-deploy`) and `VPS_KNOWN_HOSTS` (`ssh-keyscan -t ed25519 <vps>`). For an ARM
+   box, set the repository variable `VPS_PLATFORM` to `linux/arm64`. Then delete the key files from your machine.
+7. **Push to the branch** (or re-run its last Deploy run).
+
+Seed the first admin from your machine against the Neon branch, as in [The first admin](#the-first-admin).
+
+**Client IPs.** Rate limits read the caller's address from `X-Real-IP`, which Caddy overwrites with the address that
+actually connected. This only holds while nothing reaches the server except through Caddy, so never publish the server's
+port. In every new environment, check that a spoofed header is ignored: send the same failing sign in with a different
+`X-Real-IP` each time and make sure the limit still kicks in. If Cloudflare's proxy is ever put in front, Caddy will see
+Cloudflare's addresses instead: configure `trusted_proxies` and read `CF-Connecting-IP` then.
 
 ## Branches and releases
 
