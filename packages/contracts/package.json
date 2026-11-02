@@ -7,13 +7,16 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
   },
   "dependencies": {
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@terhal/eslint-config": "workspace:^",
     "@terhal/tsconfig": "workspace:^",
+    "eslint": "^10.13.0",
     "typescript": "~6.0.3"
   }
 }
