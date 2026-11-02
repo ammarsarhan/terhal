@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 
 import { prisma } from "../../platform/db/prisma.js";
-import { cache } from "../../shared/utils/redis.js";
+import { cache } from "../../platform/redis/connections.js";
 import { ServiceUnavailableError } from "../../shared/utils/error.js";
 
 const health = new Hono()

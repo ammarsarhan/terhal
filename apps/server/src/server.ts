@@ -5,7 +5,7 @@ import { serve } from "@hono/node-server";
 import app from "./app.js";
 import { env } from "./platform/config/env.js";
 import { prisma } from "./platform/db/prisma.js";
-import { cache } from "./shared/utils/redis.js";
+import { cache } from "./platform/redis/connections.js";
 
 // Locally the API runs on https://api.local.terhal.co with an mkcert certificate, so its cookies behave exactly as
 // in production (same site as the frontends, Secure). On the VPS these are never set: the edge Caddy terminates TLS.

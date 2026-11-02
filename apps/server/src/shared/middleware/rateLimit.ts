@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { getConnInfo } from "@hono/node-server/conninfo";
-import { cache } from "../utils/redis.js";
+import { cache } from "../../platform/redis/connections.js";
 import { errorCodes, ServiceUnavailableError, TooManyRequestsError } from "../utils/error.js";
 
 // What a limit is counted against.
