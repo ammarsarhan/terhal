@@ -3,5 +3,13 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["src", "prisma", "generated", "prisma.config.ts", "tsup.config.ts"]
+  "include": [
+    "src",
+    "test",
+    "prisma",
+    "generated",
+    "prisma.config.ts",
+    "tsup.config.ts",
+    "vitest.config.ts"
+  ]
 }
