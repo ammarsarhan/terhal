@@ -1,5 +1,5 @@
 # Runs on every push and PR to the three long-lived branches. Deploy (deploy.yml) waits for this to pass on staging and
-# main, and branch protection on staging/main requires it before a merge.
+# main, and branch protection on staging/main requires `check` before a merge.
 name: CI
 
 on:
@@ -9,47 +9,49 @@ on:
     branches: [dev, staging, main]
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+permissions:
+  contents: read
 
-    # Same images as docker-compose.yml, so CI matches local development.
-    services:
-      db:
-        image: postgres:18-alpine
+jobs:
+  # Branch protection can't restrict which branch a PR comes from, so enforce dev → staging → main here.
+  promotion:
+    name: Promotion source
+    if: github.event_name == 'pull_request' && (github.base_ref == 'staging' || github.base_ref == 'main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check source branch
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: terhal
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-      cache:
-        image: redis:8-alpine
-        ports:
-          - 6379:6379
-      queue:
-        image: redis:8-alpine
-        ports:
-          - 6380:6379
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          case "$BASE" in
+            staging) expected=dev ;;
+            main) expected=staging ;;
+          esac
+          if [ "$HEAD" != "$expected" ] || [ "$HEAD_REPO" != "$REPO" ]; then
+            echo "::error::PRs into $BASE must come from $expected (got $HEAD_REPO:$HEAD)."
+            exit 1
+          fi
+          echo "$HEAD → $BASE is allowed."
+
+  checks:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/terhal
-      DATABASE_URL_UNPOOLED: postgresql://postgres:postgres@localhost:5432/terhal
-      CACHE_URL: redis://localhost:6379
-      QUEUE_URL: redis://localhost:6380
-      NEXT_PUBLIC_API_URL: http://localhost:8080
+      NEXT_PUBLIC_API_URL: https://api.local.terhal.co:8080
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          # turbo --affected needs the base branch's history to diff against.
+          fetch-depth: 0
 
       # Version comes from "packageManager" in package.json.
       - uses: pnpm/action-setup@v4
@@ -61,8 +63,28 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Proves every migration applies cleanly to an empty database, the same way deploys run them.
-      - run: pnpm --filter @terhal/backend generate
-      - run: pnpm --filter @terhal/backend db:deploy
+      - name: Check formatting
+        run: pnpm format:check
 
-      - run: pnpm turbo run typecheck lint test build
+      - name: Validate the Prisma schema
+        run: pnpm --filter @terhal/server exec prisma validate
+
+      # Tests start their own Postgres and Redis (testcontainers) and apply every migration to an empty database first,
+      # the same way deploys run them. PRs only check what they change; pushes check everything.
+      - name: Lint, typecheck, test, build
+        run: pnpm turbo run lint typecheck test build ${{ github.event_name == 'pull_request' && '--affected' || '' }}
+
+  # The single status check branch protection requires.
+  check:
+    if: always()
+    needs: [promotion, checks]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Result
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in success|skipped) ;; *) exit 1 ;; esac
+          done

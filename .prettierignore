@@ -1,0 +1,14 @@
+# Written by pnpm; formatting it would fight every install.
+pnpm-lock.yaml
+
+# Prettier pads every table cell, so editing one cell rewrites the whole table in the diff.
+*.md
+
+# Generated or built.
+**/generated/
+**/dist/
+**/.next/
+apps/server/prisma/migrations/
+
+# Written by the OpenAPI contract test (apps/server/test/http/http.test.ts).
+apps/server/openapi.json
