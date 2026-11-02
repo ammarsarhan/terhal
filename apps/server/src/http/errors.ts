@@ -3,8 +3,10 @@ import type { ErrorCode, Problem } from "@terhal/contracts";
 import type { Context, ErrorHandler, NotFoundHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { currentContext } from "../platform/context/request-context.js";
 import { isDatabaseUnavailable } from "../platform/db/errors.js";
 import { AppError } from "../platform/errors/app-error.js";
+import { logger } from "../platform/logger/logger.js";
 
 // Codes for errors Hono's own middleware throws as HTTPException (e.g. malformed JSON, body limit).
 const codeForStatus: Partial<Record<number, ErrorCode>> = {
@@ -35,6 +37,8 @@ const problem = (
       status,
       code,
       detail,
+      // Quoted by users to support, and the key to this request's logs.
+      requestId: currentContext()?.requestId,
     } satisfies Problem,
     status,
     { "Content-Type": "application/problem+json" },
@@ -44,7 +48,7 @@ const genericDetail = "Something went wrong on our side. Please try again.";
 
 export const onError: ErrorHandler = (error, c) => {
   if (error instanceof AppError) {
-    if (error.status >= 500) console.error("request failed", error);
+    if (error.status >= 500) logger.error({ err: error }, "request failed");
     for (const [name, value] of Object.entries(error.headers)) c.header(name, value);
     return problem(c, error.status, error.code, error.message, error.extensions);
   }
@@ -52,7 +56,7 @@ export const onError: ErrorHandler = (error, c) => {
   if (error instanceof HTTPException) {
     if (error.status >= 500) {
       // Keep the status (a timeout's 503 tells clients to retry) but not the message.
-      console.error("request failed", error);
+      logger.error({ err: error }, "request failed");
       return problem(
         c,
         error.status,
@@ -66,12 +70,12 @@ export const onError: ErrorHandler = (error, c) => {
 
   // Overloaded or unreachable database: worth retrying, so not a 500.
   if (isDatabaseUnavailable(error)) {
-    console.warn("database unavailable", error);
+    logger.warn({ err: error }, "database unavailable");
     return problem(c, 503, "SERVICE_UNAVAILABLE", genericDetail);
   }
 
   // A bug. Log everything, tell the client nothing about it.
-  console.error("unhandled error", error);
+  logger.error({ err: error }, "unhandled error");
   return problem(c, 500, "INTERNAL_ERROR", genericDetail);
 };
 

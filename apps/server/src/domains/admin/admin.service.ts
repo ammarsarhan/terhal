@@ -11,6 +11,7 @@ import AuditService, { auditActions } from "../audit/audit.service.js";
 import { AdminStatus } from "../../../generated/prisma/enums.js";
 import type { Admin } from "../../../generated/prisma/client.js";
 import type { AcceptAdminInvitationPayload } from "./admin.validators.js";
+import { logger } from "../../platform/logger/logger.js";
 
 type RequestInfo = { ipAddress: string | null; userAgent: string | null };
 
@@ -103,7 +104,7 @@ export default class AdminService {
         data: { revokedAt: new Date() },
       });
 
-      console.error("Failed to send admin invitation:", error);
+      logger.error({ err: error }, "failed to send admin invitation");
       throw new AppError({
         code: "SERVICE_UNAVAILABLE",
         status: 503,

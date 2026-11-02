@@ -4,6 +4,7 @@ import { createMiddleware } from "hono/factory";
 import { getConnInfo } from "@hono/node-server/conninfo";
 import { cache } from "../../platform/redis/connections.js";
 import { AppError } from "../../platform/errors/app-error.js";
+import { logger } from "../../platform/logger/logger.js";
 
 // What a limit is counted against.
 export type RateLimitSubject = "ip" | "identifier" | "user";
@@ -87,7 +88,7 @@ export const rateLimit = ({ limit, windowMs, key }: RateLimitOptions) =>
     if (rateLimitKey) {
       // Fails closed: these limits guard sign in, so an unreachable Redis must not mean unlimited attempts.
       const { count, ttl } = await consume(rateLimitKey, windowMs).catch((error) => {
-        console.error("Rate limiter unavailable:", error);
+        logger.error({ err: error }, "rate limiter unavailable");
         throw new AppError({
           code: "SERVICE_UNAVAILABLE",
           status: 503,

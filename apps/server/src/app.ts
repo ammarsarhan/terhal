@@ -5,7 +5,7 @@ import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 
 import { notFound, onError } from "./http/errors.js";
-import { requestLogger } from "./shared/middleware/logger.js";
+import { accessLog, bodyLimit, requestContext, requestId, timeout } from "./http/middleware.js";
 import { requireOrigin } from "./shared/middleware/origin.js";
 import { origins, type Audience } from "./platform/config/env.js";
 
@@ -20,7 +20,11 @@ const audience = (name: Audience) =>
   [cors({ origin: origins[name], credentials: true }), requireOrigin([origins[name]])] as const;
 
 const app = new Hono()
-  .use("*", requestLogger())
+  .use(requestId)
+  .use(requestContext)
+  .use(accessLog)
+  .use(timeout)
+  .use(bodyLimit)
   .use("*", secureHeaders())
   .use("/admin/*", ...audience("admin"))
   .onError(onError)

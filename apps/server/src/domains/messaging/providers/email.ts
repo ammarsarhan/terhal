@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { env } from "../../../platform/config/env.js";
+import { logger } from "../../../platform/logger/logger.js";
 
 // Created on first use, so the app can still boot without the API key.
 let client: Resend | undefined;
@@ -21,7 +22,7 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
     if (env.APP_ENV !== "development")
       throw new Error("RESEND_KEY is not defined. Please define it in the environment variables.");
 
-    console.log(`[email] to ${to}\nSubject: ${subject}\n\n${text}`);
+    logger.info(`email to ${to}\nSubject: ${subject}\n\n${text}`);
     return;
   }
 
