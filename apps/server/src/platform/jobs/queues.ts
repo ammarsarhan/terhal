@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
 
-import { createQueueConnection } from "../platform/redis/connections.js";
+import { createQueueConnection } from "../redis/connections.js";
 
 // Each queue's job payload, keyed by queue name. Producers (the server) and processors (the worker) both type off this.
 export type JobData = {

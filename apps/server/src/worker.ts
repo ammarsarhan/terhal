@@ -1,6 +1,6 @@
 import { Worker } from "bullmq";
 
-import { processors } from "./jobs/processors.js";
+import { processors } from "./platform/jobs/processors.js";
 import { prisma } from "./platform/db/prisma.js";
 import { cache, createQueueConnection } from "./platform/redis/connections.js";
 
