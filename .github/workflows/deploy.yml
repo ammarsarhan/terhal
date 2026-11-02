@@ -1,0 +1,126 @@
+# Deploys staging and main to the VPS once CI has passed on a push to that branch: builds both images, pushes them to
+# GitHub's container registry, then runs deploy/deploy.sh on the VPS over SSH and checks the API answers.
+#
+# workflow_run only fires for workflow files on the default branch, so changes to this file take effect once they reach
+# main. To redeploy a commit, re-run its Deploy run from the Actions tab.
+#
+# Each environment is a GitHub environment (Settings → Environments, named after the branch) with these secrets:
+#   VPS_HOST         the VPS's address
+#   VPS_SSH_KEY      the private key whose public half is in /home/deploy/.ssh/authorized_keys
+#   VPS_KNOWN_HOSTS  ssh-keyscan -t ed25519 <host>, so CI refuses to talk to any other machine
+# and optionally the repository variable VPS_PLATFORM (default linux/amd64; linux/arm64 for an ARM box).
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [staging, main]
+
+permissions:
+  contents: read
+  packages: write
+
+# One deploy per environment at a time, and never cancelled halfway through.
+concurrency:
+  group: deploy-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+env:
+  ENVIRONMENT: ${{ github.event.workflow_run.head_branch }}
+  SHA: ${{ github.event.workflow_run.head_sha }}
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
+
+jobs:
+  build:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        image: [backend, web]
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.SHA }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The backend image is the same for every environment. The web image bakes in its API's URL, so it's built per
+      # environment and tagged with it.
+      - name: Pick tags
+        id: tags
+        run: |
+          if [[ "$ENVIRONMENT" == main ]]; then api=https://api.terhal.co; else api="https://api.$ENVIRONMENT.terhal.co"; fi
+          if [[ "${{ matrix.image }}" == web ]]; then tag="$ENVIRONMENT-$SHA"; else tag="$SHA"; fi
+          echo "api=$api" >> "$GITHUB_OUTPUT"
+          echo "image=$REGISTRY/terhal-${{ matrix.image }}:$tag" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.image }}/Dockerfile
+          platforms: ${{ vars.VPS_PLATFORM || 'linux/amd64' }}
+          build-args: NEXT_PUBLIC_API_URL=${{ steps.tags.outputs.api }}
+          tags: ${{ steps.tags.outputs.image }}
+          push: true
+          cache-from: type=gha,scope=${{ matrix.image }}-${{ env.ENVIRONMENT }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}-${{ env.ENVIRONMENT }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: ${{ github.event.workflow_run.head_branch }}
+      url: ${{ github.event.workflow_run.head_branch == 'main' && 'https://terhal.co' || format('https://{0}.terhal.co', github.event.workflow_run.head_branch) }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.SHA }}
+          sparse-checkout: deploy
+
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          echo "TARGET=deploy@${{ secrets.VPS_HOST }}" >> "$GITHUB_ENV"
+
+      - name: Copy deploy files
+        run: |
+          # shellcheck disable=SC2029 # expands here on purpose
+          ssh "$TARGET" "mkdir -p /opt/terhal/incoming/$ENVIRONMENT"
+          scp deploy/compose.yml "deploy/caddy/$ENVIRONMENT.caddy" "$TARGET:/opt/terhal/incoming/$ENVIRONMENT/"
+
+      # This job's token, valid only while the job runs, so the VPS never keeps a registry credential.
+      - name: Log the VPS into the registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | ssh "$TARGET" docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Deploy
+        run: |
+          ssh "$TARGET" bash -s -- "$ENVIRONMENT" "$REGISTRY/terhal-backend:$SHA" "$REGISTRY/terhal-web:$ENVIRONMENT-$SHA" \
+            < deploy/deploy.sh
+
+      - name: Log the VPS out of the registry
+        if: always()
+        run: ssh "$TARGET" docker logout ghcr.io || true
+
+      # From outside, through DNS, TLS and Caddy, the way users reach it.
+      - name: Check the API
+        run: |
+          if [[ "$ENVIRONMENT" == main ]]; then api=https://api.terhal.co; else api="https://api.$ENVIRONMENT.terhal.co"; fi
+          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors "$api/health"
