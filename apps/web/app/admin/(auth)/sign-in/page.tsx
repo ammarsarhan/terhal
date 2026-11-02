@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, type Variants } from "motion/react";
-import { api, readError, type ApiError } from "@/lib/api";
+import { api, readError } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Password from "@/components/ui/Password";
