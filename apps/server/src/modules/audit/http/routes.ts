@@ -1,6 +1,10 @@
 import { createRoute } from "@hono/zod-openapi";
 import { AuditLog, ListAuditLogs, page } from "@terhal/contracts";
-import { ADMIN_COOKIE_AUTH, requireAdmin } from "../../../platform/http/authenticate";
+import {
+  ADMIN_COOKIE_AUTH,
+  currentAdminId,
+  requireAdmin,
+} from "../../../platform/http/authenticate";
 import { createRouter, json, problemResponse } from "../../../platform/http/router";
 import { createRateLimitKey, rateLimit } from "../../../platform/rate-limit/rate-limit";
 import { listLogs } from "../application/list-logs";
@@ -18,7 +22,7 @@ const list = createRoute({
     rateLimit({
       limit: 120,
       windowMs: 60 * 1000,
-      key: (c) => createRateLimitKey("admin:logs", "user", c.var.admin.adminId),
+      key: (c) => createRateLimitKey("admin:logs", "user", currentAdminId(c)),
     }),
   ] as const,
   security: [{ [ADMIN_COOKIE_AUTH]: [] }],

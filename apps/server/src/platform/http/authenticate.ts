@@ -89,6 +89,9 @@ export interface AdminActor {
 
 // A signed in, active admin, passed down as c.var.admin. The admin is loaded on every request, since the token can't
 // reflect a deactivation made after it was issued: a deactivated admin is cut off immediately.
+// The signed in admin's id, on a route behind requireAdmin.
+export const currentAdminId = (c: Context) => (c.get("admin") as AdminActor).adminId;
+
 export const requireAdmin = createMiddleware<{ Variables: { admin: AdminActor } }>(
   async (c, next) => {
     const token = getCookie(c, adminCookies.accessCookie);

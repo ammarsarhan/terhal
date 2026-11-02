@@ -33,7 +33,7 @@ router.use("/v1/admin/*", ...audience("admin"));
 // Every module's routes, versioned. Chained, so the type below carries every route for the web app's RPC client.
 const v1 = createRouter().route("/", adminAuthRoutes).route("/", auditRoutes);
 
-const routes = router.route("/health", health).route("/v1", v1);
+export const routes = router.route("/health", health).route("/v1", v1);
 
 // The web app's typed client (hono/client) is built from this.
 export type AppType = typeof routes;

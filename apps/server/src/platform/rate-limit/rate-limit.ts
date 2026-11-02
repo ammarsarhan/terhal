@@ -10,11 +10,11 @@ import { logger } from "../logger/logger";
 // What a limit is counted against.
 export type RateLimitSubject = "ip" | "identifier" | "user";
 
-type RateLimitOptions = {
+interface RateLimitOptions {
   limit: number;
   windowMs: number;
   key: (c: Context) => string | undefined | Promise<string | undefined>;
-};
+}
 
 // Builds every key in the same shape: "<scope>:<subject>:<hash>", e.g. "admin:sign-in:ip:9f86d0…".
 export const createRateLimitKey = (scope: string, subject: RateLimitSubject, value: string) => {
@@ -45,11 +45,15 @@ export const ipKey = (scope: string) => (c: Context) =>
   createRateLimitKey(scope, "ip", getClientIp(c));
 
 // Counts requests per value of a JSON body field, e.g. the email being signed into.
-// Runs before validation, so it reads the raw body (the validator can still read it afterwards) and skips the limit when the field is missing.
+// Runs before validation, so it reads the raw body (the validator can still read it afterwards) and skips the limit
+// when the field is missing.
 export const bodyKey =
   (scope: string, subject: RateLimitSubject, field: string) => async (c: Context) => {
-    const body = await c.req.json().catch(() => null);
-    const value = body?.[field];
+    const body: unknown = await c.req.json().catch(() => null);
+    const value =
+      typeof body === "object" && body !== null
+        ? (body as Record<string, unknown>)[field]
+        : undefined;
 
     return typeof value === "string" ? createRateLimitKey(scope, subject, value) : undefined;
   };
@@ -88,7 +92,7 @@ export const rateLimit = ({ limit, windowMs, key }: RateLimitOptions) =>
 
     if (rateLimitKey) {
       // Fails closed: these limits guard sign in, so an unreachable Redis must not mean unlimited attempts.
-      const { count, ttl } = await consume(rateLimitKey, windowMs).catch((error) => {
+      const { count, ttl } = await consume(rateLimitKey, windowMs).catch((error: unknown) => {
         logger.error({ err: error }, "rate limiter unavailable");
         throw new AppError({
           code: "SERVICE_UNAVAILABLE",

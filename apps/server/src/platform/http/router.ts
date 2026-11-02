@@ -7,7 +7,7 @@ import { validationFailed } from "../errors/validation";
 const rejectInvalid: Hook<unknown, Env, string, unknown> = (result) => {
   if (result.success) return;
   const errors: ValidationIssue[] = result.error.issues.map((issue) => ({
-    in: result.target as ValidationIssue["in"],
+    in: result.target,
     path: issue.path.join("."),
     code: issue.code,
     message: issue.message,
