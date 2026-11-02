@@ -1,4 +1,4 @@
-import { sendEmail } from "./providers/email.js";
+import { sendEmail } from "../../platform/email/email.js";
 
 // The single place that talks to messaging providers, so other domains only say what to send and to whom.
 export default class MessagingService {
